@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
-import { Link } from 'expo-router';
+import { Link , router, useRouter} from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Header from '../components/Header';
-import Banner from '../components/Banner';
+import Header from './components/Header';
+import Banner from './components/Banner';
 
 const MENU_ITEMS = [
   {
@@ -53,9 +53,17 @@ const MENU_ITEMS = [
 ];
 
 export default function Home() {
+
+  const handleMenuItemPress = (item) => {
+   
+    //navigate to the corresponding screen
+    router.push(`/category/${item.id}`);
+
+  };
+
   return (
     <View style={styles.container}>
-      <Header title='Home' />
+      <Header title='Shop' />
 
       {/* Menu Grid */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -64,10 +72,7 @@ export default function Home() {
 
         <View style={styles.menuGrid}>
           {MENU_ITEMS.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => {
-              // handle menu item press to navigate to the corresponding screen
-
-            }}>
+            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => handleMenuItemPress(item)}>
               <View style={styles.menuItemInner}>
                 {item.icon && (
                   <Ionicons name={item.icon} size={32} color="#E97777" />
@@ -104,7 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
- 
+
   content: {
     flex: 1,
   },
