@@ -1,7 +1,8 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { apiService } from '../services/apiService';
 
 const PRODUCTS =
 {
@@ -25,8 +26,27 @@ const PRODUCTS =
 
 export default function ProductPage() {
     const { id } = useLocalSearchParams();
-    const product = PRODUCTS;
     const [quantity, setQuantity] = useState(1);
+    const [loading, setLoading] = useState(true);
+    // const [product, setProduct] = useState([]);
+    const [product, setProduct] = useState(PRODUCTS);
+
+
+    const getData = async (currentOffset = 0) => {
+        try {
+            const res = await apiService.getProduct(id);
+            // setProduct(res[0]);
+            console.log(res);
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        getData();
+    }, []);
 
     const handleBack = () => {
         router.back();
@@ -58,63 +78,77 @@ export default function ProductPage() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Product Image */}
-                <Image source={{ uri: product.image }} style={styles.productImage} />
-
-                {/* Product Info */}
-                <View style={styles.productInfo}>
-                    <Text style={styles.title}>{product.title}</Text>
-                    <View style={styles.priceContainer}>
-                        <Text style={styles.price}>OMR {product.price.toFixed(3)}</Text>
-                        <Text style={styles.wasPrice}>was {product.wasPrice.toFixed(3)}</Text>
-                    </View>
-
-                    {/* Quantity Selector */}
-                    <View style={styles.quantitySelector}>
-                        <TouchableOpacity onPress={decrementQuantity} style={styles.quantityButton}>
-                            <Text style={styles.quantityButtonText}>−</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.quantity}>{quantity}</Text>
-                        <TouchableOpacity onPress={incrementQuantity} style={styles.quantityButton}>
-                            <Text style={styles.quantityButtonText}>+</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Product Details */}
-                    <View style={styles.detailsSection}>
-                        <Text style={styles.sectionTitle}>PRODUCT INFO</Text>
-                        <Text style={styles.categoryTag}>{product.category}</Text>
-                        <View style={styles.details}>
-                            <Text style={styles.detailText}>{product.details.compatibility}</Text>
-                            <Text style={styles.detailText}>Cup Size: {product.details.cupSize}</Text>
-                            <Text style={styles.detailText}>Cup Weight: {product.details.cupWeight}</Text>
-                            <Text style={styles.detailText}>Intensity: {product.details.intensity}</Text>
-                            <Text style={styles.detailText}>Brand: {product.details.brand}</Text>
-                            <Text style={styles.detailText}>Packing: {product.details.packing}</Text>
-                            <Text style={styles.detailText}>Origin: {product.details.origin}</Text>
-                            <Text style={styles.detailText}>{product.details.type}</Text>
-                        </View>
-                    </View>
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#2C3639" />
                 </View>
-            </ScrollView>
+            ) : (
+                <>
+                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                        {/* Product Image */}
+                        <Image source={{ uri: product.image }} style={styles.productImage} />
 
-            {/* Action Buttons */}
-            <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.wishlistButton}>
-                    <Text style={styles.wishlistButtonText}>ADD TO WISHLIST</Text>
-                    <Ionicons name="heart-outline" size={24} color="#2C3639" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.basketButton}>
-                    <Text style={styles.basketButtonText}>ADD TO BASKET</Text>
-                    <Ionicons name="basket-outline" size={24} color="#fff" />
-                </TouchableOpacity>
-            </View>
+                        {/* Product Info */}
+                        <View style={styles.productInfo}>
+                            <Text style={styles.title}>{product.title}</Text>
+                            <View style={styles.priceContainer}>
+                                <Text style={styles.price}>OMR {product.price.toFixed(3)}</Text>
+                                <Text style={styles.wasPrice}>was {product.wasPrice.toFixed(3)}</Text>
+                            </View>
+
+                            {/* Quantity Selector */}
+                            <View style={styles.quantitySelector}>
+                                <TouchableOpacity onPress={decrementQuantity} style={styles.quantityButton}>
+                                    <Text style={styles.quantityButtonText}>−</Text>
+                                </TouchableOpacity>
+                                <Text style={styles.quantity}>{quantity}</Text>
+                                <TouchableOpacity onPress={incrementQuantity} style={styles.quantityButton}>
+                                    <Text style={styles.quantityButtonText}>+</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Product Details */}
+                            <View style={styles.detailsSection}>
+                                <Text style={styles.sectionTitle}>PRODUCT INFO</Text>
+                                <Text style={styles.categoryTag}>{product.category}</Text>
+                                <View style={styles.details}>
+                                    <Text style={styles.detailText}>{product.details.compatibility}</Text>
+                                    <Text style={styles.detailText}>Cup Size: {product.details.cupSize}</Text>
+                                    <Text style={styles.detailText}>Cup Weight: {product.details.cupWeight}</Text>
+                                    <Text style={styles.detailText}>Intensity: {product.details.intensity}</Text>
+                                    <Text style={styles.detailText}>Brand: {product.details.brand}</Text>
+                                    <Text style={styles.detailText}>Packing: {product.details.packing}</Text>
+                                    <Text style={styles.detailText}>Origin: {product.details.origin}</Text>
+                                    <Text style={styles.detailText}>{product.details.type}</Text>
+                                </View>
+                            </View>
+                        </View>
+                    </ScrollView>
+                    {/* Action Buttons */}
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity style={styles.wishlistButton}>
+                            <Text style={styles.wishlistButtonText}>ADD TO WISHLIST</Text>
+                            <Ionicons name="heart-outline" size={24} color="#2C3639" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.basketButton}>
+                            <Text style={styles.basketButtonText}>ADD TO BASKET</Text>
+                            <Ionicons name="basket-outline" size={24} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+                </>
+            )}
+
+
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     container: {
         flex: 1,
         backgroundColor: '#fff',

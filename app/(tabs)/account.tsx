@@ -91,14 +91,14 @@ export default function Account() {
         </View>
 
         {/* Shop Button */}
-        <Link href="/(tabs)/main-shop" asChild>
+        <Link href="/shop" asChild>
           <TouchableOpacity style={styles.shopButton}>
             <Text style={styles.shopButtonText}>GO TO SHOP</Text>
           </TouchableOpacity>
         </Link>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/auth')}>
           <Text style={styles.logoutButtonText}>LOGOUT</Text>
         </TouchableOpacity>
       </ScrollView>

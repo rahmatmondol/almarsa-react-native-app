@@ -1,58 +1,26 @@
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import Banner from '../components/Banner';
-
-const MENU_ITEMS = [
-  {
-    id: 'main-shop',
-    title: 'MAIN SHOP',
-    icon: 'cart-outline',
-  },
-  {
-    id: 'new-week',
-    title: 'NEW THIS WEEK',
-    ribbon: true,
-  },
-  {
-    id: 'best-seller',
-    title: 'BEST SELLER',
-    stars: true,
-  },
-  {
-    id: 'special-deals',
-    title: 'SPECIAL DEALS',
-    badge: 'SPECIAL',
-  },
-  {
-    id: 'deal-day',
-    title: 'DEAL OF THE DAY',
-    badge: 'DEAL',
-  },
-  {
-    id: 'healthy',
-    title: 'GO HEALTHY',
-    icon: 'leaf-outline',
-  },
-  {
-    id: 'world-foods',
-    title: 'WORLD FOODS',
-    icon: 'globe-outline',
-  },
-  {
-    id: 'connoisseur',
-    title: "CONNOISSEUR'S CHOICE",
-    icon: 'restaurant-outline',
-  },
-  {
-    id: 'gift',
-    title: 'SAY IT WITH A GIFT',
-    icon: 'gift-outline',
-  },
-];
+import { useEffect, useState } from 'react';
+import { apiService } from '../services/apiService';
 
 export default function Home() {
+
+  const [homeData, setHomeData] = useState([]);
+  const [homeItems, setHomeItems] = useState([]);
+
+  const getHome = async () => {
+    const res = await apiService.getHome()
+    setHomeData(res.data[0])
+    setHomeItems(res.data[0].items)
+  }
+
+  useEffect(() => {
+    getHome();
+  }, [])
+
   return (
     <View style={styles.container}>
       <Header title='Home' />
@@ -60,16 +28,27 @@ export default function Home() {
       {/* Menu Grid */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* banner */}
-        <Banner />
+        <Banner
+          image={homeData.image || null}
+          icon={homeData.icon || null}
+        />
 
         <View style={styles.menuGrid}>
-          {MENU_ITEMS.map((item) => (
+          {[{ id: 'shop', title: 'Main Shop', icon: 'bag-outline', category_id: 'shop' }, ...homeItems].map((item) => (
             <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => {
-              // handle menu item press to navigate to the corresponding screen
-
+              if (item.id === 'shop') {
+                router.push(`/shop`)
+              } else {
+                router.push(`/category/${item.category_id}`)
+              }
             }}>
               <View style={styles.menuItemInner}>
-                {item.icon && (
+                {item.icon !== 'bag-outline' ? (
+                  <Image
+                    source={{ uri: item.icon }}
+                    style={styles.menuItemIcon}
+                  />
+                ) : (
                   <Ionicons name={item.icon} size={32} color="#E97777" />
                 )}
                 {item.ribbon && (
@@ -104,7 +83,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
- 
+
   content: {
     flex: 1,
   },
@@ -165,5 +144,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  menuItemIcon: {
+    width: 60,
+    height: 42,
   },
 });

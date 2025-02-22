@@ -1,17 +1,20 @@
 import { View, Text, StyleSheet, Image } from 'react-native';
 
-function Banner(props) {
+function Banner({ title = '', image = '', description = '', icon = '' }) {
     return (
         <View style={styles.heroSection}>
             <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1559329007-40df8a9345d8?q=80&w=1000&auto=format&fit=crop' }}
+                source={image ? { uri: image } : require('@/assets/images/default.png')}
                 style={styles.heroImage}
             />
             <View style={styles.heroOverlay} />
             <Text style={styles.heroText}>
-                GOOD <Text style={styles.heroTextAccent}>FOOD</Text> FEELS{' '}
-                <Text style={styles.heroTextAccent}>GOOD</Text>
+                <Text style={styles.heroTextAccent}>{title}</Text>
             </Text>
+            <Image
+                source={{ uri: icon }}
+                style={styles.heroIcon}
+            />
         </View>
     );
 }
@@ -22,6 +25,12 @@ const styles = StyleSheet.create({
     heroSection: {
         height: 200,
         position: 'relative',
+        overflow: 'hidden',
+        marginBottom: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#2C3639',
+        flexDirection: 'column',
     },
     heroImage: {
         width: '100%',
@@ -31,14 +40,19 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
+    heroIcon: {
+        width: 100,
+        height: 50,
+        position: 'absolute',
+    },
     heroText: {
         position: 'absolute',
-        bottom: 24,
         width: '100%',
         textAlign: 'center',
         color: '#fff',
         fontSize: 24,
         fontWeight: 'bold',
+        top: 30,
     },
     heroTextAccent: {
         color: '#E97777',

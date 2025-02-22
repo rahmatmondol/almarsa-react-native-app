@@ -11,9 +11,9 @@ export default function Auth() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.welcomeText}>welcome to</Text>
-        
+
         <Image
-          source={{ uri: 'https://images.unsplash.com/photo-1579684947550-22e945225d9a?q=80&w=1000&auto=format&fit=crop' }}
+          source={require('@/assets/images/main-logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -23,17 +23,17 @@ export default function Auth() {
         </Text>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={() => router.push('/login')}>
             <Text style={styles.buttonText}>LOGIN</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={() => router.push('/register')}>
             <Text style={styles.buttonText}>REGISTER</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.button, styles.guestButton]}
-            onPress={handleGuestLogin}
+            onPress={() => router.push('/shop')}
           >
             <Text style={[styles.buttonText, styles.guestButtonText]}>
               GO TO SHOP
