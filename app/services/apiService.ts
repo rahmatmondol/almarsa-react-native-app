@@ -1,4 +1,10 @@
 import api from '../utils/api';
+import * as SecureStore from 'expo-secure-store';
+// is authenticated
+export const authToken = async () => {
+    const token = await SecureStore.getItemAsync('authToken');
+    return !!token;
+};
 
 export const apiService = {
 
@@ -24,4 +30,30 @@ export const apiService = {
     login: (data: any) => api.post('/login', data),
     register: (data: any) => api.post('/register', data),
 
+    // add to cart
+    addToCart: (data: any) => api.post('/auth/cart', data),
+
+    // get cart
+    getCart: () => api.get('/auth/carts'),
+
+    // remove from cart
+    removeFromCart: (id: number) => api.delete(`/auth/cart/${id}`),
+
+    // update cart
+    updateCart: (data: any) => api.post(`/auth/cart-update`, data),
+
+    //cartitem delete
+    deleteCartItem: (id: number) => api.delete(`/auth/cart/${id}`),
+
+    // add to wishlist
+    addToWishlist: (data: any) => api.post('/auth/wishlist', data),
+
+    // get wishlist
+    getWishlist: () => api.get('/auth/wishlists'),
+
+    // remove from wishlist
+    removeFromWishlist: (id: number) => api.delete(`/auth/wishlist/${id}`),
+
+    // update wishlist
+    updateWishlist: (data: any) => api.post(`/auth/wishlist-update`, data),
 };

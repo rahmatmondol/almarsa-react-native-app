@@ -1,62 +1,78 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, router } from 'expo-router';
 import Header from '../components/Header';
-
-// Mock data for basket items
-const INITIAL_BASKET = [
-  {
-    id: '1',
-    title: 'Farm Veggie Box',
-    description: 'Fresh seasonal vegetables',
-    price: 3.500,
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1557844352-761f2565b576?w=800&auto=format&fit=crop',
-  },
-  {
-    id: '2',
-    title: 'Organic Mix',
-    description: 'Mixed organic vegetables',
-    price: 3.500,
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=800&auto=format&fit=crop',
-  },
-  {
-    id: '3',
-    title: 'Premium Selection',
-    description: 'Premium quality vegetables',
-    price: 3.500,
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=800&auto=format&fit=crop',
-  },
-];
+import { apiService } from '../services/apiService';
+import useStore from '../store/useStore';
 
 export default function Basket() {
-  const [basket, setBasket] = useState(INITIAL_BASKET);
+  const [cart, setCart] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
   const [editItem, setEditItem] = useState(null);
   const [editQuantity, setEditQuantity] = useState(1);
-
-  const totalItems = basket.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = basket.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  const handleRemoveItem = (id) => {
-    setBasket(basket.filter(item => item.id !== id));
+  const [loading, setLoading] = useState(true);
+  const { setBasket } = useStore();
+  // Fetch cart data
+  const getCart = async () => {
+    try {
+      const res = await apiService.getCart();
+      setCart(res.product);
+      setCartItems(res.product.items);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    getCart();
+  }, []);
+
+  // Handle remove item
+  const handleRemoveItem = async (id) => {
+    try {
+      const res = await apiService.deleteCartItem(id);
+      if (res.success) {
+        setCart(res.cart);
+        setCartItems(res.cart.items);
+        setBasket(res.cart.items.length);
+      } else {
+        alert(res.message);
+      }
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // Handle edit item
   const handleEditItem = (item) => {
     setEditItem(item);
     setEditQuantity(item.quantity);
   };
 
-  const handleSaveEdit = () => {
-    if (editItem) {
-      setBasket(basket.map(item => 
-        item.id === editItem.id 
-          ? { ...item, quantity: editQuantity }
-          : item
-      ));
-      setEditItem(null);
+  // Handle save edit
+  const handleSaveEdit = async () => {
+    if (!editItem) return;
+    try {
+      const res = await apiService.updateCart({
+        quantity: editQuantity,
+        product_id: editItem.product_id
+      });
+
+      if (res.success) {
+        setCart(res.cart);
+        setCartItems(res.cart.items);
+        setEditItem(null);
+        setBasket(res.cart.items.length);
+      } else {
+        alert(res.message);
+      }
+
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -67,27 +83,32 @@ export default function Basket() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <Header title="Basket" />
+      <Header title="cart" />
 
-      {/* Basket Summary */}
+      {/* cart Summary */}
       <Text style={styles.summary}>
-        {totalItems} Items: (OMR {totalPrice.toFixed(3)})
+        {cartItems?.length} Items: ( {cart?.grand_total} OMR )
       </Text>
 
-      {/* Basket Items */}
+      {/* cart Items */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {basket.map(item => (
-          <View key={item.id} style={styles.basketItem}>
+        {cartItems?.map(item => (
+          <View key={item.id} style={styles.cartItem}>
             <Image source={{ uri: item.image }} style={styles.itemImage} />
             <View style={styles.itemDetails}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.itemDescription}>{item.description}</Text>
+              <Text style={styles.itemTitle}>{item.name}</Text>
               <View style={styles.itemPriceRow}>
                 <Text style={styles.itemPrice}>
-                  OMR {(item.price * item.quantity).toFixed(3)}
+                  OMR {item.price}
                 </Text>
+                {item.discount > 0 && (
+                  <Text style={styles.wasPrice}>save {item.discount}</Text>
+                )}
                 <Text style={styles.itemQuantity}>
                   X {item.quantity}
+                </Text>
+                <Text style={styles.itemPrice}>
+                  OMR {item.sub_total}
                 </Text>
               </View>
             </View>
@@ -95,7 +116,7 @@ export default function Basket() {
               <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
                 <Ionicons name="close-circle-outline" size={24} color="#E97777" />
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.editButton}
                 onPress={() => handleEditItem(item)}
               >
@@ -136,19 +157,18 @@ export default function Basket() {
             {editItem && (
               <View style={styles.editItemContent}>
                 <Image source={{ uri: editItem.image }} style={styles.editItemImage} />
-                <Text style={styles.editItemTitle}>{editItem.title}</Text>
-                <Text style={styles.editItemDescription}>{editItem.description}</Text>
-                <Text style={styles.editItemPrice}>OMR {editItem.price.toFixed(3)}</Text>
+                <Text style={styles.editItemTitle}>{editItem.name}</Text>
+                <Text style={styles.editItemPrice}>OMR {editItem.price}</Text>
 
                 <View style={styles.quantitySelector}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.quantityButton}
                     onPress={() => handleQuantityChange(-1)}
                   >
                     <Text style={styles.quantityButtonText}>−</Text>
                   </TouchableOpacity>
                   <Text style={styles.quantity}>{editQuantity}</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.quantityButton}
                     onPress={() => handleQuantityChange(1)}
                   >
@@ -158,9 +178,9 @@ export default function Basket() {
 
                 <View style={styles.modalActions}>
                   <Text style={styles.totalPrice}>
-                    OMR {(editItem.price * editQuantity).toFixed(3)}
+                    OMR {(editItem.price * editQuantity).toFixed(2)}
                   </Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.saveButton}
                     onPress={handleSaveEdit}
                   >
@@ -237,7 +257,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  basketItem: {
+  cartItem: {
     flexDirection: 'row',
     padding: 16,
     borderBottomWidth: 1,
@@ -408,5 +428,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  wasPrice: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: -10,
   },
 });

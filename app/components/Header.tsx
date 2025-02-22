@@ -3,13 +3,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import DrawerMenu from './DrawerMenu';
 import { useState } from 'react';
-
+import useStore from '../store/useStore';
 interface HeaderProps {
     title: string;
     onBack?: () => void;
 }
 
 export default function Header({ title, onBack }: HeaderProps) {
+    const { notifications, wishlist } = useStore();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const handleBack = () => {
         router.back();
@@ -48,10 +49,22 @@ export default function Header({ title, onBack }: HeaderProps) {
                     <View style={styles.headerActions}>
                         <TouchableOpacity style={styles.headerIcon} onPress={() => router.push('/wishlist')}>
                             <Ionicons name="heart-outline" size={30} color="#fff" />
+                            {wishlist > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{wishlist}</Text>
+                                </View>
+                            )}
+
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.headerIcon}>
+                            {notifications > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{notifications}</Text>
+                                </View>
+                            )}
                             <Link href="/notifications">
                                 <Ionicons name="notifications-outline" size={30} color="#fff" />
+
                             </Link>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.headerIcon} onPress={() => {
@@ -101,6 +114,21 @@ const styles = StyleSheet.create({
     },
     headerIcon: {
         marginLeft: 16,
+    },
+    badge: {
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        backgroundColor: 'red',
+        borderRadius: 50,
+        width: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    badgeText: {
+        color: '#fff',
+        fontSize: 12,
     },
 
 });

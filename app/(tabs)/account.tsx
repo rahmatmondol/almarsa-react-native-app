@@ -2,30 +2,34 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import Header from '../components/Header';
-import useStore from '../store/useStore';
-import Banner from '../components/Banner';
-
-// Mock user data
-const USER = {
-  name: 'Jon Doe',
-  email: 'youremail@gmail.com',
-  phone: '00968 xxxxxxx',
-  avatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=800&auto=format&fit=crop',
-};
+import * as SecureStore from 'expo-secure-store';
+import { useEffect, useState } from 'react';
 
 export default function Account() {
 
-  const { isAuthenticated, logout, user } = useStore();
+  const [user, setUser] = useState([]);
 
-  if (!isAuthenticated) {
-    router.replace('/login');
-    return null;
+  const userData = async () => {
+    const data = await SecureStore.getItemAsync('userData');
+    if (data) {
+      setUser(JSON.parse(data));
+    } else {
+      router.replace('/auth');
+    }
   }
+
+  useEffect(() => {
+    userData();
+  }, []);
+
 
   //logout function
   const handleLogout = () => {
-    logout();
+    SecureStore.deleteItemAsync('userToken');
+    SecureStore.deleteItemAsync('userData');
+    router.replace('/auth');
   };
+
 
   return (
     <ScrollView style={styles.container}>
@@ -35,7 +39,7 @@ export default function Account() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Hero Section */}
-        {user?.data?.image &&
+        {user?.image &&
           <View style={styles.heroSection}>
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?w=800&auto=format&fit=crop' }}
@@ -43,7 +47,7 @@ export default function Account() {
             />
             <View style={styles.heroOverlay} />
             <View style={styles.userInfo}>
-              <Image source={{ uri: user?.data?.image }} style={styles.avatar} />
+              <Image source={{ uri: user?.image }} style={styles.avatar} />
               <Text style={styles.userName}>{user?.data?.name}</Text>
             </View>
           </View>
@@ -53,12 +57,12 @@ export default function Account() {
         <View style={styles.section}>
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="mail-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{user?.data?.email}</Text>
+            <Text style={styles.infoText}>{user?.email}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="call-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{user?.data?.phone}</Text>
+            <Text style={styles.infoText}>{user?.phone}</Text>
           </TouchableOpacity>
         </View>
 

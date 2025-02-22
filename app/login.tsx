@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import useStore from './store/useStore';
 import { apiService } from './services/apiService';
+import * as SecureStore from 'expo-secure-store';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,25 +17,32 @@ export default function Login() {
   }
 
   const handleLogin = async () => {
-
-    if (!email || !password) {
-      alert('Please enter email and password');
+    if (!email.trim() || !password.trim()) {
+      alert('Please enter a valid email and password');
       return;
     }
 
     try {
       const response = await apiService.login({ email, password });
+      if (response.error) {
+        alert(response.message);
+        return;
+      }
+
       setUser({
         token: response.token,
-        data: response.user
+        data: response.user,
       });
-      console.log('Login response:', response);
 
+      await SecureStore.setItemAsync('authToken', response.token);
+      await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
+
+      alert('Login successful');
+      router.replace('/(tabs)/account');
     } catch (error) {
+      console.error('Login error:', error);
       alert('Your email or password is incorrect');
-      // throw error; // Propagate the error
     }
-
   };
 
   const handleBack = () => {

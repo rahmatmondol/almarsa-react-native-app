@@ -1,7 +1,24 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
+import useStore from '../store/useStore';
+import { useEffect, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
 export default function TabLayout() {
+
+  const { basket } = useStore();
+  const [user, setUser] = useState([]);
+
+  const userData = async () => {
+    const data = await SecureStore.getItemAsync('userData');
+    if (data) {
+      setUser(JSON.parse(data));
+    }
+  }
+
+  useEffect(() => {
+    userData();
+  }, []);
+
 
   console.log('TabLayout');
   return (
@@ -29,10 +46,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="basket"
         options={{
-          title: 'Your Basket',
+          title: 'Basket',
           tabBarIcon: ({ size, color }) => (
             <Ionicons name="basket" size={size} color={color} />
           ),
+          tabBarBadge: basket > 0 ? String(basket) : undefined,
         }}
       />
       <Tabs.Screen

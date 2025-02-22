@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Dimensions, Modal, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { apiService } from '../services/apiService';
+import { apiService, authToken } from '../services/apiService';
 import ImageViewer from 'react-native-image-zoom-viewer'; // For zoomable images
 import RenderHtml from 'react-native-render-html'; // To render HTML content
-
+import useStore from '../store/useStore';
 const { width } = Dimensions.get('window'); // Get screen width
+
 
 export default function ProductPage() {
     const { id } = useLocalSearchParams();
@@ -17,6 +18,7 @@ export default function ProductPage() {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isVariationModalVisible, setIsVariationModalVisible] = useState(false);
     const [selectedVariation, setSelectedVariation] = useState(null);
+    const { isAuthenticated, setBasket, setWishlist } = useStore();
 
     const getData = async () => {
         try {
@@ -78,10 +80,53 @@ export default function ProductPage() {
         addToCart();
     };
 
-    const addToCart = () => {
+    const addToWishlist = async () => {
+        const Token = await authToken();
+
+        if (!Token) {
+            router.push('/auth');
+            return;
+        }
+
+        try {
+            const res = await apiService.addToWishlist({
+                product_id: product?.id,
+                quantity: quantity,
+            });
+            console.log(res);
+            if (res.success) {
+                setWishlist(res.product.items.length);
+                Alert.alert('Success', 'Product added to wishlist successfully.');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const addToCart = async () => {
+
+        const Token = await authToken();
+
+        if (!Token) {
+            router.push('/auth');
+            return;
+        }
+
         if (selectedVariation || product.productOptions?.length === 0) {
             // Add to cart logic here
-            Alert.alert('Added to Cart', `Added ${quantity} x ${product.name} to cart.`);
+            try {
+                const res = await apiService.addToCart({
+                    product_id: product?.id,
+                    quantity: quantity,
+                });
+                if (res.success) {
+                    setBasket(res.product.items.length);
+                    Alert.alert('Success', 'Product added to cart successfully.');
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
         } else {
             Alert.alert('Select Variation', 'Please select a variation before adding to cart.');
         }
@@ -189,7 +234,7 @@ export default function ProductPage() {
 
                     {/* Action Buttons */}
                     <View style={styles.actionButtons}>
-                        <TouchableOpacity style={styles.wishlistButton}>
+                        <TouchableOpacity style={styles.wishlistButton} onPress={addToWishlist}>
                             <Text style={styles.wishlistButtonText}>ADD TO WISHLIST</Text>
                             <Ionicons name="heart-outline" size={24} color="#2C3639" />
                         </TouchableOpacity>
@@ -261,7 +306,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     description: {
-      fontSize: 18,  
+        fontSize: 18,
     },
     content: {
         flex: 1,
