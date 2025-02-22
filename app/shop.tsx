@@ -1,80 +1,50 @@
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
-import { Link , router, useRouter} from 'expo-router';
+import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Header from './components/Header';
-import Banner from './components/Banner';
+import Header from '@/app/components/Header';
+import Banner from '@/app/components/Banner';
+import { useEffect, useState } from 'react';
+import { apiService } from '@/app/services/apiService';
 
-const MENU_ITEMS = [
-  {
-    id: 'main-shop',
-    title: 'MAIN SHOP',
-    icon: 'cart-outline',
-  },
-  {
-    id: 'new-week',
-    title: 'NEW THIS WEEK',
-    ribbon: true,
-  },
-  {
-    id: 'best-seller',
-    title: 'BEST SELLER',
-    stars: true,
-  },
-  {
-    id: 'special-deals',
-    title: 'SPECIAL DEALS',
-    badge: 'SPECIAL',
-  },
-  {
-    id: 'deal-day',
-    title: 'DEAL OF THE DAY',
-    badge: 'DEAL',
-  },
-  {
-    id: 'healthy',
-    title: 'GO HEALTHY',
-    icon: 'leaf-outline',
-  },
-  {
-    id: 'world-foods',
-    title: 'WORLD FOODS',
-    icon: 'globe-outline',
-  },
-  {
-    id: 'connoisseur',
-    title: "CONNOISSEUR'S CHOICE",
-    icon: 'restaurant-outline',
-  },
-  {
-    id: 'gift',
-    title: 'SAY IT WITH A GIFT',
-    icon: 'gift-outline',
-  },
-];
+export default function Shop() {
 
-export default function Home() {
+  const [shopData, setShopData] = useState([]);
+  const [shopItems, setShopItems] = useState([]);
 
-  const handleMenuItemPress = (item) => {
-   
-    //navigate to the corresponding screen
-    router.push(`/category/${item.id}`);
+  const getShop = async () => {
+    const res = await apiService.getShop()
+    setShopData(res.data[0])
+    setShopItems(res.data[0].items)
+  }
 
-  };
+  useEffect(() => {
+    getShop();
+  }, [])
 
   return (
     <View style={styles.container}>
-      <Header title='Shop' />
+      <Header title='Home' />
 
       {/* Menu Grid */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* banner */}
-        <Banner />
+        <Banner
+          image={shopData.image || null}
+          icon={shopData.icon || null}
+        />
 
         <View style={styles.menuGrid}>
-          {MENU_ITEMS.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => handleMenuItemPress(item)}>
+          {shopItems?.map((item) => (
+            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => {
+              router.push(`/category/${item.category_id}`)
+            }}>
               <View style={styles.menuItemInner}>
-                {item.icon && (
+                {item.icon !== 'bag-outline' ? (
+                  <Image
+                    source={{ uri: item.icon }}
+                    style={styles.menuItemIcon}
+                  />
+                ) : (
                   <Ionicons name={item.icon} size={32} color="#E97777" />
                 )}
                 {item.ribbon && (
@@ -170,5 +140,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  menuItemIcon: {
+    width: 100,
+    height: 100,
+    objectFit: 'contain',
   },
 });

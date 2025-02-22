@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 export default function CategoryArchive() {
   const { id } = useLocalSearchParams();
   const [products, setProducts] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [page, setPage] = useState([]);
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -25,6 +26,7 @@ export default function CategoryArchive() {
       if (currentOffset === 0) {
         setProducts(res.products);
         setPage(res.category);
+        setSubCategories(res.subcategories);
       } else {
         setProducts(prev => [...prev, ...res.products]);
       }
@@ -88,15 +90,11 @@ export default function CategoryArchive() {
   const FilterSection = () => (
     <View style={styles.filters}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterButtonText}>Farm veggie box</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterButtonText}>Chilled Vegetables</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterButtonText}>Fresh Produce</Text>
-        </TouchableOpacity>
+        {subCategories?.map((subCategory) => (
+          <TouchableOpacity key={subCategory.id} style={styles.filterButton} onPress={() => router.push(`/category/${subCategory.id}`)}>
+            <Text style={styles.filterButtonText}>{subCategory.name}</Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </View>
   );

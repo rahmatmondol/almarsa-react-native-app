@@ -41,9 +41,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
     heroIcon: {
-        width: 100,
-        height: 50,
+        width: 90,
+        height: 60,
         position: 'absolute',
+        objectFit: 'contain',
     },
     heroText: {
         position: 'absolute',

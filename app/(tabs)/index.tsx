@@ -49,18 +49,11 @@ export default function Home() {
                     style={styles.menuItemIcon}
                   />
                 ) : (
-                  <Ionicons name={item.icon} size={32} color="#E97777" />
+                  <Ionicons name={item.icon} size={100} color="#E97777" />
                 )}
                 {item.ribbon && (
                   <View style={styles.ribbon}>
                     <Text style={styles.ribbonText}>NEW</Text>
-                  </View>
-                )}
-                {item.stars && (
-                  <View style={styles.stars}>
-                    {[...Array(5)].map((_, i) => (
-                      <Ionicons key={i} name="star" size={16} color="#E97777" />
-                    ))}
                   </View>
                 )}
                 {item.badge && (
@@ -146,7 +139,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   menuItemIcon: {
-    width: 60,
-    height: 42,
+    width: 100,
+    height: 100,
+    objectFit: 'contain',
   },
 });

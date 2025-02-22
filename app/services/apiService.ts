@@ -11,6 +11,9 @@ export const apiService = {
     // home page
     getHome: () => api.get('/home'),
 
+    // get shop
+    getShop: () => api.get(`/shop`),
+
     // get category archive
     getCategoryArchive: (id: any, limit: number, offset: number) => api.get(`/category/${id}?limit=${limit}&offset=${offset}`),
 
