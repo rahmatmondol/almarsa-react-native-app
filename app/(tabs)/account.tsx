@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import Header from '../components/Header';
+import useStore from '../store/useStore';
+import Banner from '../components/Banner';
 
 // Mock user data
 const USER = {
@@ -12,25 +14,51 @@ const USER = {
 };
 
 export default function Account() {
-  // desable header
+
+  const { isAuthenticated, logout, user } = useStore();
+
+  if (!isAuthenticated) {
+    router.replace('/login');
+    return null;
+  }
+
+  //logout function
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <ScrollView style={styles.container}>
       <Header title="My Account" />
       {/* Header */}
 
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* Hero Section */}
+        {user?.data?.image &&
+          <View style={styles.heroSection}>
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?w=800&auto=format&fit=crop' }}
+              style={styles.heroImage}
+            />
+            <View style={styles.heroOverlay} />
+            <View style={styles.userInfo}>
+              <Image source={{ uri: user?.data?.image }} style={styles.avatar} />
+              <Text style={styles.userName}>{user?.data?.name}</Text>
+            </View>
+          </View>
+        }
+
         {/* Contact Information */}
         <View style={styles.section}>
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="mail-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{USER.email}</Text>
+            <Text style={styles.infoText}>{user?.data?.email}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="call-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{USER.phone}</Text>
+            <Text style={styles.infoText}>{user?.data?.phone}</Text>
           </TouchableOpacity>
         </View>
 
@@ -98,7 +126,7 @@ export default function Account() {
         </Link>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/auth')}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => handleLogout()}>
           <Text style={styles.logoutButtonText}>LOGOUT</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -110,6 +138,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  heroSection: {
+    height: 200,
+    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2C3639',
+    flexDirection: 'column',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
 
   heroOverlay: {

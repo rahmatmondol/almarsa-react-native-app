@@ -2,15 +2,39 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput } from 'reac
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import useStore from './store/useStore';
+import { apiService } from './services/apiService';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { user, isAuthenticated, setUser, logout } = useStore();
 
-  const handleLogin = () => {
-    // Handle login logic here
-    router.replace('/(tabs)');
+  if (isAuthenticated) {
+    router.replace('/(tabs)/account');
+  }
+
+  const handleLogin = async () => {
+
+    if (!email || !password) {
+      alert('Please enter email and password');
+      return;
+    }
+
+    try {
+      const response = await apiService.login({ email, password });
+      setUser({
+        token: response.token,
+        data: response.user
+      });
+      console.log('Login response:', response);
+
+    } catch (error) {
+      alert('Your email or password is incorrect');
+      // throw error; // Propagate the error
+    }
+
   };
 
   const handleBack = () => {

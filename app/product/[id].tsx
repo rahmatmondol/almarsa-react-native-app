@@ -1,42 +1,27 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Dimensions, Modal, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '../services/apiService';
+import ImageViewer from 'react-native-image-zoom-viewer'; // For zoomable images
+import RenderHtml from 'react-native-render-html'; // To render HTML content
 
-const PRODUCTS =
-{
-    id: '1',
-    title: 'Coffee Capsules "Cremoso"',
-    price: 3.700,
-    wasPrice: 5.700,
-    image: 'https://images.unsplash.com/photo-1557844352-761f2565b576?w=800&auto=format&fit=crop',
-    category: 'FROZEN',
-    details: {
-        compatibility: 'Nespresso Compatible',
-        cupSize: 'Espresso',
-        cupWeight: '5g',
-        intensity: '04/12',
-        brand: 'Rioba',
-        packing: '11 capsules',
-        origin: 'Italy',
-        type: 'Dry Product'
-    }
-}
+const { width } = Dimensions.get('window'); // Get screen width
 
 export default function ProductPage() {
     const { id } = useLocalSearchParams();
     const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
-    // const [product, setProduct] = useState([]);
-    const [product, setProduct] = useState(PRODUCTS);
+    const [product, setProduct] = useState({});
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [isVariationModalVisible, setIsVariationModalVisible] = useState(false);
+    const [selectedVariation, setSelectedVariation] = useState(null);
 
-
-    const getData = async (currentOffset = 0) => {
+    const getData = async () => {
         try {
             const res = await apiService.getProduct(id);
-            // setProduct(res[0]);
-            console.log(res);
+            setProduct(res.product);
         } catch (error) {
             console.log(error);
         } finally {
@@ -66,6 +51,42 @@ export default function ProductPage() {
         setQuantity(quantity + 1);
     };
 
+    const openImageModal = (index) => {
+        setSelectedImageIndex(index);
+        setIsModalVisible(true);
+    };
+
+    const closeImageModal = () => {
+        setIsModalVisible(false);
+    };
+
+    const openVariationModal = () => {
+        if (product.productOptions?.length > 0) {
+            setIsVariationModalVisible(true);
+        } else {
+            addToCart();
+        }
+    };
+
+    const closeVariationModal = () => {
+        setIsVariationModalVisible(false);
+    };
+
+    const handleVariationSelection = (variation) => {
+        setSelectedVariation(variation);
+        closeVariationModal();
+        addToCart();
+    };
+
+    const addToCart = () => {
+        if (selectedVariation || product.productOptions?.length === 0) {
+            // Add to cart logic here
+            Alert.alert('Added to Cart', `Added ${quantity} x ${product.name} to cart.`);
+        } else {
+            Alert.alert('Select Variation', 'Please select a variation before adding to cart.');
+        }
+    };
+
     return (
         <View style={styles.container}>
             {/* Header */}
@@ -85,15 +106,31 @@ export default function ProductPage() {
             ) : (
                 <>
                     <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                        {/* Product Image */}
-                        <Image source={{ uri: product.image }} style={styles.productImage} />
+                        {/* Product Image Slider */}
+                        <ScrollView
+                            horizontal
+                            pagingEnabled
+                            showsHorizontalScrollIndicator={false}
+                            style={styles.sliderContainer}
+                        >
+                            {product.media.items.map((item, index) => (
+                                <TouchableOpacity key={index} onPress={() => openImageModal(index)}>
+                                    <Image
+                                        source={{ uri: item.image.url }}
+                                        style={[styles.productImage, { width }]} // Set image width to screen width
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
 
                         {/* Product Info */}
                         <View style={styles.productInfo}>
-                            <Text style={styles.title}>{product.title}</Text>
+                            <Text style={styles.title}>{product.name}</Text>
                             <View style={styles.priceContainer}>
-                                <Text style={styles.price}>OMR {product.price.toFixed(3)}</Text>
-                                <Text style={styles.wasPrice}>was {product.wasPrice.toFixed(3)}</Text>
+                                <Text style={styles.price}>OMR {product.price.discountedPrice}</Text>
+                                {product.discount.value > 0 && (
+                                    <Text style={styles.wasPrice}>was {product.price.price}</Text>
+                                )}
                             </View>
 
                             {/* Quantity Selector */}
@@ -107,51 +144,112 @@ export default function ProductPage() {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Product Details */}
-                            <View style={styles.detailsSection}>
-                                <Text style={styles.sectionTitle}>PRODUCT INFO</Text>
-                                <Text style={styles.categoryTag}>{product.category}</Text>
-                                <View style={styles.details}>
-                                    <Text style={styles.detailText}>{product.details.compatibility}</Text>
-                                    <Text style={styles.detailText}>Cup Size: {product.details.cupSize}</Text>
-                                    <Text style={styles.detailText}>Cup Weight: {product.details.cupWeight}</Text>
-                                    <Text style={styles.detailText}>Intensity: {product.details.intensity}</Text>
-                                    <Text style={styles.detailText}>Brand: {product.details.brand}</Text>
-                                    <Text style={styles.detailText}>Packing: {product.details.packing}</Text>
-                                    <Text style={styles.detailText}>Origin: {product.details.origin}</Text>
-                                    <Text style={styles.detailText}>{product.details.type}</Text>
-                                </View>
+                            {/* Product Description */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>DESCRIPTION</Text>
+                                <RenderHtml
+                                    contentWidth={width}
+                                    style={styles.description}
+                                    source={{ html: product.description }}
+                                />
                             </View>
+
+
+
+                            {/* Variations */}
+                            {product.productOptions?.length > 0 && (
+                                <View style={styles.section}>
+                                    <Text style={styles.sectionTitle}>VARIATIONS</Text>
+                                    {product.productOptions.map((option, index) => (
+                                        <View key={index} style={styles.variation}>
+                                            <Text style={styles.variationText}>{option.name}</Text>
+                                            {/* Render choices if available */}
+                                            {option.choices?.map((choice, idx) => (
+                                                <Text key={idx} style={styles.choiceText}>
+                                                    {choice.description}
+                                                </Text>
+                                            ))}
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+
+                            {/* Additional Info */}
+                            {product.additionalInfoSections?.map((section, index) => (
+                                <View key={index} style={styles.section}>
+                                    <Text style={styles.sectionTitle}>{section.title}</Text>
+                                    <RenderHtml
+                                        contentWidth={width}
+                                        source={{ html: section.description }}
+                                    />
+                                </View>
+                            ))}
                         </View>
                     </ScrollView>
+
                     {/* Action Buttons */}
                     <View style={styles.actionButtons}>
                         <TouchableOpacity style={styles.wishlistButton}>
                             <Text style={styles.wishlistButtonText}>ADD TO WISHLIST</Text>
                             <Ionicons name="heart-outline" size={24} color="#2C3639" />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.basketButton}>
+                        <TouchableOpacity style={styles.basketButton} onPress={openVariationModal}>
                             <Text style={styles.basketButtonText}>ADD TO BASKET</Text>
                             <Ionicons name="basket-outline" size={24} color="#fff" />
                         </TouchableOpacity>
                     </View>
+
+                    {/* Full-Size Image Modal */}
+                    <Modal visible={isModalVisible} transparent={true} onRequestClose={closeImageModal}>
+                        <ImageViewer
+                            imageUrls={product.media.items.map((item) => ({ url: item.image.url }))}
+                            index={selectedImageIndex}
+                            enableSwipeDown
+                            onSwipeDown={closeImageModal}
+                            enableImageZoom
+                            renderHeader={() => (
+                                <TouchableOpacity onPress={closeImageModal} style={styles.closeButton}>
+                                    <Ionicons name="close" size={30} color="#fff" />
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </Modal>
+
+                    {/* Variation Selection Modal */}
+                    <Modal visible={isVariationModalVisible} transparent={true} animationType="slide">
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Select Variation</Text>
+                                {product.productOptions.map((option, index) => (
+                                    <TouchableOpacity
+                                        key={index}
+                                        style={styles.variationOption}
+                                        onPress={() => handleVariationSelection(option)}
+                                    >
+                                        <Text style={styles.variationOptionText}>{option.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                                <TouchableOpacity onPress={closeVariationModal} style={styles.closeModalButton}>
+                                    <Text style={styles.closeModalButtonText}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
                 </>
             )}
-
-
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
     },
     header: {
         flexDirection: 'row',
@@ -162,12 +260,17 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         backgroundColor: '#fff',
     },
+    description: {
+      fontSize: 18,  
+    },
     content: {
         flex: 1,
     },
+    sliderContainer: {
+        height: 300, // Set a fixed height for the slider
+    },
     productImage: {
-        width: '100%',
-        height: 300,
+        height: 300, // Match the height of the slider container
         resizeMode: 'cover',
     },
     productInfo: {
@@ -220,32 +323,26 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#2C3639',
     },
-    detailsSection: {
+    section: {
         marginTop: 24,
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: '#2C3639',
+    },
+    variation: {
         marginBottom: 16,
     },
-    categoryTag: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#E97777',
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 4,
-        color: '#fff',
-        fontSize: 12,
+    variationText: {
+        fontSize: 16,
         fontWeight: '600',
-        marginBottom: 16,
+        color: '#2C3639',
     },
-    details: {
-        gap: 8,
-    },
-    detailText: {
+    choiceText: {
         fontSize: 14,
         color: '#666',
+        marginLeft: 16,
     },
     actionButtons: {
         padding: 16,
@@ -280,6 +377,51 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
     },
     basketButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 50,
+        right: 20,
+        zIndex: 1,
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#2C3639',
+        marginBottom: 16,
+    },
+    variationOption: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    variationOptionText: {
+        fontSize: 16,
+        color: '#2C3639',
+    },
+    closeModalButton: {
+        marginTop: 16,
+        padding: 10,
+        backgroundColor: '#E97777',
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    closeModalButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',

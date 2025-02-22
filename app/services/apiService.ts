@@ -20,5 +20,8 @@ export const apiService = {
     getOrders: () => api.get('/orders'),
     createOrder: (data: any) => api.post('/orders', data),
 
+    // Auth
+    login: (data: any) => api.post('/login', data),
+    register: (data: any) => api.post('/register', data),
 
 };
