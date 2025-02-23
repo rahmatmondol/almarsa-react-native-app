@@ -39,7 +39,7 @@ const useStore = create<Store>((set, get) => ({
     user: null,
     isAuthenticated: false,
     setUser: (user) => set({ user, isAuthenticated: !!user }),
-    logout: () => set({ user: null, isAuthenticated: false }),
+    logout: () => set({ user: null, isAuthenticated: false, wishlist: { count: 0 }, basket: { count: 0 }, notifications: { count: 0 } }),
     // Wishlist
     wishlist: { count: 0 },
     setWishlist: (wishlist) => set({ wishlist }),

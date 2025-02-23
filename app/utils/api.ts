@@ -78,7 +78,7 @@ api.interceptors.response.use(
 
         // Return a standardized error
         return Promise.reject({
-          message: 'Session expired. Please log in again.',
+          message: 'User name or password is incorrect',
           code: 'SESSION_EXPIRED',
         });
       }

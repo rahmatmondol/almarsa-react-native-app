@@ -1,26 +1,46 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import useStore from '../store/useStore';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
+
 export default function TabLayout() {
+  const { isAuthenticated, setUser, logout, setBasket, setWishlist, basket } = useStore();
 
-  const { basket } = useStore();
-  const [user, setUser] = useState([]);
+  const loadUserData = async () => {
+    try {
+      const [userData, basketCount, wishlistCount] = await Promise.all([
+        SecureStore.getItemAsync('userData'),
+        SecureStore.getItemAsync('basket'),
+        SecureStore.getItemAsync('wishlist')
+      ]);
 
-  const userData = async () => {
-    const data = await SecureStore.getItemAsync('userData');
-    if (data) {
-      setUser(JSON.parse(data));
+      if (userData) {
+        const parsedUserData = JSON.parse(userData);
+        setUser({
+          token: await SecureStore.getItemAsync('authToken') || '',
+          data: parsedUserData
+        });
+        setBasket(parseInt(basketCount || '0', 10));
+        setWishlist(parseInt(wishlistCount || '0', 10));
+      } else {
+        logout();
+        router.replace('/auth');
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      logout();
+      router.replace('/auth');
     }
-  }
+  };
 
   useEffect(() => {
-    userData();
-  }, []);
+    if (!isAuthenticated) {
+      loadUserData();
+    }
+  }, [isAuthenticated]);
 
-
-  console.log('TabLayout');
   return (
     <Tabs
       screenOptions={{
@@ -50,13 +70,13 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => (
             <Ionicons name="basket" size={size} color={color} />
           ),
-          tabBarBadge: basket > 0 ? String(basket) : undefined,
+          tabBarBadge: basket > 0 ? basket.toString() : undefined,
         }}
       />
       <Tabs.Screen
         name="about"
         options={{
-          title: 'about',
+          title: 'About',
           tabBarIcon: ({ size, color }) => (
             <Ionicons name="information-circle" size={size} color={color} />
           ),

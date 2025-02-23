@@ -5,11 +5,26 @@ import Header from '../components/Header';
 import Banner from '../components/Banner';
 import { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
+import useStore from '../store/useStore';
+import * as SecureStore from 'expo-secure-store';
 
 export default function Home() {
 
   const [homeData, setHomeData] = useState([]);
   const [homeItems, setHomeItems] = useState([]);
+  const { setUser, logout } = useStore();
+
+  const userData = async () => {
+    const data = await SecureStore.getItemAsync('userData');
+    if (data) {
+      setUser(JSON.parse(data));
+    } else {
+      await SecureStore.deleteItemAsync('userData');
+      await SecureStore.deleteItemAsync('authToken');
+      logout();
+      router.replace('/auth');
+    }
+  }
 
   const getHome = async () => {
     const res = await apiService.getHome()
@@ -19,6 +34,7 @@ export default function Home() {
 
   useEffect(() => {
     getHome();
+    userData();
   }, [])
 
   return (

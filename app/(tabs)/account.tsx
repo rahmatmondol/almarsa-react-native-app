@@ -4,32 +4,44 @@ import { Link, router } from 'expo-router';
 import Header from '../components/Header';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
+import useStore from '../store/useStore';
 
 export default function Account() {
 
-  const [user, setUser] = useState([]);
-
-  const userData = async () => {
-    const data = await SecureStore.getItemAsync('userData');
-    if (data) {
-      setUser(JSON.parse(data));
-    } else {
-      router.replace('/auth');
-    }
-  }
+  const { user, logout, isAuthenticated } = useStore();
 
   useEffect(() => {
-    userData();
-  }, []);
+    if (!isAuthenticated) {
+      router.replace('/auth');
+    }
+  }, [isAuthenticated]);
 
+  const handleLogout = async () => {
+    try {
+      // Clear all secure storage
+      await Promise.all([
+        SecureStore.deleteItemAsync('authToken'),
+        SecureStore.deleteItemAsync('userData'),
+        SecureStore.deleteItemAsync('basket'),
+        SecureStore.deleteItemAsync('wishlist')
+      ]);
 
-  //logout function
-  const handleLogout = () => {
-    SecureStore.deleteItemAsync('userToken');
-    SecureStore.deleteItemAsync('userData');
-    router.replace('/auth');
+      // Clear global state
+      logout();
+
+      // Navigate to auth
+      router.replace('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still logout even if there's an error clearing storage
+      logout();
+      router.replace('/auth');
+    }
   };
 
+  if (!isAuthenticated || !user) {
+    return null;
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -42,7 +54,7 @@ export default function Account() {
         {user?.image &&
           <View style={styles.heroSection}>
             <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?w=800&auto=format&fit=crop' }}
+              source={{ uri: user?.image }}
               style={styles.heroImage}
             />
             <View style={styles.heroOverlay} />

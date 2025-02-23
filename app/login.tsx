@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ActivityIndicator } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -10,11 +10,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { user, isAuthenticated, setUser, logout } = useStore();
-
-  if (isAuthenticated) {
-    router.replace('/(tabs)/account');
-  }
+  const { setUser, setBasket, setWishlist } = useStore();
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -23,25 +20,34 @@ export default function Login() {
     }
 
     try {
+      setLoading(true);
       const response = await apiService.login({ email, password });
+      
       if (response.error) {
         alert(response.message);
         return;
       }
 
+      // Store user data securely
+      await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
+      await SecureStore.setItemAsync('authToken', response.token);
+      await SecureStore.setItemAsync('wishlist', response.wishlists_count.toString());
+      await SecureStore.setItemAsync('basket', response.cart_count.toString());
+
+      // Update global state
       setUser({
         token: response.token,
         data: response.user,
       });
+      setBasket(response.cart_count);
+      setWishlist(response.wishlists_count);
 
-      await SecureStore.setItemAsync('authToken', response.token);
-      await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
-
-      alert('Login successful');
-      router.replace('/(tabs)/account');
-    } catch (error) {
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      alert(error.message || 'Login failed');
       console.error('Login error:', error);
-      alert('Your email or password is incorrect');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,8 +101,16 @@ export default function Login() {
             <Text style={styles.forgotPassword}>Forgot your password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>LOGIN</Text>
+          <TouchableOpacity 
+            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.loginButtonText}>LOGIN</Text>
+            )}
           </TouchableOpacity>
 
           <Text style={styles.orText}>Or login with</Text>
@@ -185,6 +199,9 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 24,
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
   },
   loginButtonText: {
     color: '#fff',
