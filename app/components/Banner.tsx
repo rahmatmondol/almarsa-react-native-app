@@ -4,8 +4,9 @@ function Banner({ title = '', image = '', description = '', icon = '' }) {
     return (
         <View style={styles.heroSection}>
             <Image
-                source={image ? { uri: image } : require('@/assets/images/default.png')}
+                source={{ uri: image }}
                 style={styles.heroImage}
+                resizeMode="cover"
             />
             <View style={styles.heroOverlay} />
             <Text style={styles.heroText}>

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Link, router } from 'expo-router';
@@ -7,56 +7,63 @@ import { apiService } from '../services/apiService';
 import useStore from '../store/useStore';
 
 export default function Basket() {
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [editItem, setEditItem] = useState(null);
   const [editQuantity, setEditQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
-  const { setBasket } = useStore();
-  // Fetch cart data
+  const [updating, setUpdating] = useState(false);
+  const { setBasket, isAuthenticated } = useStore();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/auth');
+      return;
+    }
+    getCart();
+  }, [isAuthenticated]);
+
   const getCart = async () => {
     try {
+      setLoading(true);
       const res = await apiService.getCart();
-      setCart(res.product);
-      setCartItems(res.product.items);
+      if (res.success) {
+        setCart(res.product);
+        setCartItems(res.product.items);
+        setBasket(res.product.items.length);
+      }
     } catch (error) {
-      console.log(error);
+      console.error('Error fetching cart:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    getCart();
-  }, []);
-
-  // Handle remove item
   const handleRemoveItem = async (id) => {
     try {
-      const res = await apiService.deleteCartItem(id);
+      setUpdating(true);
+      const res = await apiService.removeFromCart(id);
       if (res.success) {
         setCart(res.cart);
         setCartItems(res.cart.items);
         setBasket(res.cart.items.length);
-      } else {
-        alert(res.message);
       }
-
     } catch (error) {
-      console.log(error);
+      console.error('Error removing item:', error);
+    } finally {
+      setUpdating(false);
     }
   };
 
-  // Handle edit item
   const handleEditItem = (item) => {
     setEditItem(item);
     setEditQuantity(item.quantity);
   };
 
-  // Handle save edit
   const handleSaveEdit = async () => {
     if (!editItem) return;
     try {
+      setUpdating(true);
       const res = await apiService.updateCart({
         quantity: editQuantity,
         product_id: editItem.product_id
@@ -67,12 +74,11 @@ export default function Basket() {
         setCartItems(res.cart.items);
         setEditItem(null);
         setBasket(res.cart.items.length);
-      } else {
-        alert(res.message);
       }
-
     } catch (error) {
-      console.log(error);
+      console.error('Error updating cart:', error);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -80,19 +86,41 @@ export default function Basket() {
     setEditQuantity(prev => Math.max(1, prev + increment));
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2C3639" />
+      </View>
+    );
+  }
+
+  if (!cartItems.length) {
+    return (
+      <View style={styles.container}>
+        <Header title="Basket" />
+        <View style={styles.emptyContainer}>
+          <Ionicons name="basket-outline" size={64} color="#ccc" />
+          <Text style={styles.emptyText}>Your basket is empty</Text>
+          <Link href="/shop" asChild>
+            <TouchableOpacity style={styles.shopButton}>
+              <Text style={styles.shopButtonText}>START SHOPPING</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <Header title="cart" />
+      <Header title="Basket" />
 
-      {/* cart Summary */}
       <Text style={styles.summary}>
-        {cartItems?.length} Items: ( {cart?.grand_total} OMR )
+        {cartItems.length} Items: (OMR {cart?.grand_total})
       </Text>
 
-      {/* cart Items */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {cartItems?.map(item => (
+        {cartItems.map(item => (
           <View key={item.id} style={styles.cartItem}>
             <Image source={{ uri: item.image }} style={styles.itemImage} />
             <View style={styles.itemDetails}>
@@ -113,33 +141,46 @@ export default function Basket() {
               </View>
             </View>
             <View style={styles.itemActions}>
-              <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
-                <Ionicons name="close-circle-outline" size={24} color="#E97777" />
+              <TouchableOpacity 
+                onPress={() => handleRemoveItem(item.id)}
+                disabled={updating}
+              >
+                <Ionicons 
+                  name="close-circle-outline" 
+                  size={24} 
+                  color={updating ? "#ccc" : "#E97777"} 
+                />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.editButton}
                 onPress={() => handleEditItem(item)}
+                disabled={updating}
               >
-                <Ionicons name="chevron-down" size={24} color="#666" />
+                <Ionicons 
+                  name="chevron-down" 
+                  size={24} 
+                  color={updating ? "#ccc" : "#666"} 
+                />
               </TouchableOpacity>
             </View>
           </View>
         ))}
       </ScrollView>
 
-      {/* Action Buttons */}
       <View style={styles.actionButtons}>
         <Link href="/shop" asChild>
-          <TouchableOpacity style={styles.continueButton} onPress={() => router.push('/shop')}>
+          <TouchableOpacity style={styles.continueButton}>
             <Text style={styles.continueButtonText}>BACK TO SHOP</Text>
           </TouchableOpacity>
         </Link>
-        <TouchableOpacity style={styles.checkoutButton} onPress={() => router.push('/checkout')}>
+        <TouchableOpacity 
+          style={styles.checkoutButton}
+          onPress={() => router.push('/checkout')}
+        >
           <Text style={styles.checkoutButtonText}>CHECKOUT</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Edit Item Modal */}
       <Modal
         visible={editItem !== null}
         transparent={true}
@@ -178,13 +219,18 @@ export default function Basket() {
 
                 <View style={styles.modalActions}>
                   <Text style={styles.totalPrice}>
-                    OMR {(editItem.price * editQuantity).toFixed(2)}
+                    OMR {(editItem.price * editQuantity).toFixed(3)}
                   </Text>
                   <TouchableOpacity
-                    style={styles.saveButton}
+                    style={[styles.saveButton, updating && styles.buttonDisabled]}
                     onPress={handleSaveEdit}
+                    disabled={updating}
                   >
-                    <Text style={styles.saveButtonText}>Save</Text>
+                    {updating ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.saveButtonText}>Save</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -201,51 +247,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    backgroundColor: '#2C3639',
-  },
-  headerTop: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-    paddingBottom: 16,
+    backgroundColor: '#fff',
   },
-  logo: {
-    width: 120,
-    height: 40,
-  },
-  headerActions: {
-    flexDirection: 'row',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
-  headerIcon: {
-    marginLeft: 16,
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 24,
   },
-  heroSection: {
-    height: 200,
-    position: 'relative',
+  shopButton: {
+    backgroundColor: '#E97777',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  heroTitle: {
-    position: 'absolute',
-    bottom: 24,
-    width: '100%',
-    textAlign: 'center',
+  shopButtonText: {
     color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  heroTitleAccent: {
-    color: '#E97777',
+    fontSize: 16,
+    fontWeight: '600',
   },
   summary: {
     padding: 16,
@@ -278,11 +307,6 @@ const styles = StyleSheet.create({
     color: '#2C3639',
     marginBottom: 4,
   },
-  itemDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
   itemPriceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -292,6 +316,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#E97777',
+  },
+  wasPrice: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: -10,
   },
   itemQuantity: {
     fontSize: 14,
@@ -370,12 +399,6 @@ const styles = StyleSheet.create({
     color: '#2C3639',
     marginBottom: 4,
   },
-  editItemDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
   editItemPrice: {
     fontSize: 20,
     fontWeight: '600',
@@ -423,15 +446,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 24,
+    minWidth: 100,
+    alignItems: 'center',
   },
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  wasPrice: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: -10,
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });

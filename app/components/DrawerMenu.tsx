@@ -1,63 +1,61 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
-
-const MENU_ITEMS = {
-  'FRUIT AND VEG': {
-    ALL: null,
-    VEGATABLES: {
-      'Farm Veggie Box': null,
-      'Chilled Vegetables': null,
-      'Frozen Vegetables': null,
-      'Canned & Jarred Vegetables': null,
-      'Pickled Vegetables': null,
-      'Cresses & Herbs': null,
-      'Edible Flowers': null,
-      'Salads & Leaves': null,
-      'Mushrooms & Truffle': null,
-      'Olives': null,
-    },
-    FRUITS: {
-      'Frozen Fruits': null,
-      'Canned Fruits': null,
-    }
-  },
-  'BUTCHERY': null,
-  'SEA FOOD': null,
-  'DAIRY': null,
-  'PANTRY': null,
-  'BEVERAGES': null,
-  'BAKERY AND PASTRY': null,
-};
+import { apiService } from '../services/apiService';
 
 export default function DrawerMenu({ onClose }: { onClose: () => void }) {
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const [expandedSubcategory, setExpandedSubcategory] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<number | null>(null);
+  const [expandedSubcategory, setExpandedSubcategory] = useState<number | null>(null);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCategoryPress = (category: string) => {
-    if (expandedCategory === category) {
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getCategories();
+      setCategories(response || []);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategoryPress = (categoryId: number) => {
+    if (expandedCategory === categoryId) {
       setExpandedCategory(null);
       setExpandedSubcategory(null);
     } else {
-      setExpandedCategory(category);
+      setExpandedCategory(categoryId);
       setExpandedSubcategory(null);
     }
   };
 
-  const handleSubcategoryPress = (subcategory: string) => {
-    if (expandedSubcategory === subcategory) {
+  const handleSubcategoryPress = (subcategoryId: number) => {
+    if (expandedSubcategory === subcategoryId) {
       setExpandedSubcategory(null);
     } else {
-      setExpandedSubcategory(subcategory);
+      setExpandedSubcategory(subcategoryId);
     }
   };
 
-  const handleItemPress = (category: string, subcategory?: string, item?: string) => {
-    // Handle navigation here
-    router.push(`/category/${category.toLowerCase()}`);
+  const handleItemPress = (category: any) => {
+    router.push(`/category/${category.id}`);
     onClose();
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#E97777" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -71,49 +69,55 @@ export default function DrawerMenu({ onClose }: { onClose: () => void }) {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {Object.entries(MENU_ITEMS).map(([category, subcategories]) => (
-          <View key={category}>
+        {categories.map((category) => (
+          <View key={category.id}>
             <TouchableOpacity
               style={styles.categoryButton}
-              onPress={() => handleCategoryPress(category)}
+              onPress={() => handleCategoryPress(category.id)}
             >
-              <Text style={styles.categoryText}>{category}</Text>
-              {subcategories && (
+              <View style={styles.categoryHeader}>
+                <Text style={styles.categoryText}>{category.name}</Text>
+              </View>
+              {category.children_recursive?.length > 0 && (
                 <Ionicons
-                  name={expandedCategory === category ? 'chevron-up' : 'chevron-down'}
+                  name={expandedCategory === category.id ? "chevron-up" : "chevron-down"}
                   size={24}
                   color="#E97777"
                 />
               )}
             </TouchableOpacity>
 
-            {expandedCategory === category && subcategories && (
+            {expandedCategory === category.id && category.children_recursive?.length > 0 && (
               <View style={styles.subcategoriesContainer}>
-                {Object.entries(subcategories).map(([subcategory, items]) => (
-                  <View key={subcategory}>
+                {category.children_recursive.map((subcategory) => (
+                  <View key={subcategory.id}>
                     <TouchableOpacity
                       style={styles.subcategoryButton}
-                      onPress={() => handleSubcategoryPress(subcategory)}
+                      onPress={() => handleSubcategoryPress(subcategory.id)}
                     >
-                      <Text style={styles.subcategoryText}>{subcategory}</Text>
-                      {items && (
+                      <View style={styles.subcategoryHeader}>
+                        <Text style={styles.subcategoryText}>{subcategory.name}</Text>
+                      </View>
+                      {subcategory.children_recursive?.length > 0 && (
                         <Ionicons
-                          name={expandedSubcategory === subcategory ? 'chevron-up' : 'chevron-down'}
+                          name={expandedSubcategory === subcategory.id ? "chevron-up" : "chevron-down"}
                           size={20}
                           color="#E97777"
                         />
                       )}
                     </TouchableOpacity>
 
-                    {expandedSubcategory === subcategory && items && (
+                    {expandedSubcategory === subcategory.id && subcategory.children_recursive?.length > 0 && (
                       <View style={styles.itemsContainer}>
-                        {Object.keys(items).map((item) => (
+                        {subcategory.children_recursive.map((item) => (
                           <TouchableOpacity
-                            key={item}
+                            key={item.id}
                             style={styles.itemButton}
-                            onPress={() => handleItemPress(category, subcategory, item)}
+                            onPress={() => handleItemPress(item)}
                           >
-                            <Text style={styles.itemText}>{item}</Text>
+                            <View style={styles.itemHeader}>
+                              <Text style={styles.itemText}>{item.name}</Text>
+                            </View>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -132,6 +136,12 @@ export default function DrawerMenu({ onClose }: { onClose: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#2C3639',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#2C3639',
   },
   header: {
@@ -154,13 +164,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
   categoryText: {
     color: '#E97777',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
+    flex: 1,
   },
   subcategoriesContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#2C3639',
   },
   subcategoryButton: {
     flexDirection: 'row',
@@ -169,20 +186,36 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 32,
   },
+  subcategoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
+  },
   subcategoryText: {
-    color: '#fff',
-    fontSize: 14,
+    color: '#E97777',
+    fontSize: 18,
+    flex: 1,
   },
   itemsContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
   },
   itemButton: {
     paddingVertical: 10,
     paddingHorizontal: 48,
   },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   itemText: {
     color: '#fff',
-    fontSize: 14,
-    opacity: 0.8,
+    fontSize: 16,
+    flex: 1,
+  },
+  productCount: {
+    fontSize: 12,
+    color: '#E97777',
+    marginLeft: 8,
   },
 });
