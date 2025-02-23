@@ -1,23 +1,28 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from './services/apiService';
 import * as SecureStore from 'expo-secure-store';
 import useStore from './store/useStore';
+
 export default function Checkout() {
   const [selectedPayment, setSelectedPayment] = useState('cash');
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { isAuthenticated, setUser } = useStore();
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { isAuthenticated, user } = useStore();
 
-  const userData = async () => {
-    const data = await SecureStore.getItemAsync('userData');
-    if (data) {
-      setUser(JSON.parse(data));
-    } else {
-      router.replace('/auth');
-    }
+  if (!isAuthenticated) {
+    router.replace('/auth');
+    return null;
+  }
+
+  // check have shipping address
+  if (!user.shipping_first_name || !user.shipping_last_name || !user.shipping_phone || !user.shipping_address || !user.shipping_city || !user.shipping_state || !user.shipping_postal_code) {
+    router.replace('/edit-address');
+    return null;
   }
 
   const handleBack = () => {
@@ -29,7 +34,7 @@ export default function Checkout() {
       const res = await apiService.getCart();
       setCart(res.product);
     } catch (error) {
-      console.log(error);
+      console.error('Error fetching cart:', error);
     } finally {
       setLoading(false);
     }
@@ -37,16 +42,49 @@ export default function Checkout() {
 
   useEffect(() => {
     getCart();
-    userData();
   }, []);
 
-  const handlePlaceOrder = () => {
-    // Handle order placement
-    router.replace('/(tabs)');
+  const handlePlaceOrder = async () => {
+    try {
+      setPlacingOrder(true);
+      // Call your order placement API here
+      const response = await apiService.placeOrder({
+        'fist_name': user.shipping_first_name,
+        'last_name': user.shipping_last_name,
+        'email': user.email,
+        'phone': user.shipping_phone,
+        'address': user.shipping_address,
+        'address2': user.shipping_address2,
+        'city': user.shipping_city,
+        'state': user.shipping_state,
+        'postal_code': user.shipping_postal_code
+      });
+
+      if (response.success) {
+        setShowSuccessModal(true);
+        // Wait for 2 seconds before redirecting
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          router.replace('/(tabs)');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      Alert.alert('Error', 'Failed to place order. Please try again.');
+    } finally {
+      setPlacingOrder(false);
+    }
   };
 
-  return (
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2C3639" />
+      </View>
+    );
+  }
 
+  return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -55,91 +93,95 @@ export default function Checkout() {
           <Text style={styles.headerTitle}>Check out</Text>
         </TouchableOpacity>
       </View>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2C3639" />
-        </View>
-      ) : (
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Delivery Address */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="location-outline" size={24} color="#2C3639" />
-              <Text style={styles.sectionTitle}>Delivery Address</Text>
-            </View>
-            <Text style={styles.addressText}>123 Main Street, City</Text>
-            <TouchableOpacity>
-              <Link href="/edit-address" style={styles.changeLink}>Change</Link>
-            </TouchableOpacity>
-          </View>
-
-          {/* Delivery Time */}
-          {/* <View style={styles.section}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Delivery Address */}
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="time-outline" size={24} color="#2C3639" />
-            <Text style={styles.sectionTitle}>Delivery time</Text>
+            <Ionicons name="location-outline" size={24} color="#2C3639" />
+            <Text style={styles.sectionTitle}>Delivery Address</Text>
           </View>
-          <Text style={styles.timeText}>00:00:00</Text>
-        </View> */}
+          <Text style={styles.addressText}>123 Main Street, City</Text>
+          <TouchableOpacity>
+            <Link href="/edit-address" style={styles.changeLink}>Change</Link>
+          </TouchableOpacity>
+        </View>
 
-          {/* Payment Method */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Pay with</Text>
+        {/* Payment Method */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Pay with</Text>
 
-            <TouchableOpacity
-              style={[
-                styles.paymentOption,
-                selectedPayment === 'cash' && styles.paymentOptionSelected
-              ]}
-              onPress={() => setSelectedPayment('cash')}
-            >
-              <Text style={styles.paymentText}>Cash on Delivery</Text>
-              <View style={styles.radio}>
-                {selectedPayment === 'cash' && <View style={styles.radioSelected} />}
-              </View>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.paymentOption,
+              selectedPayment === 'cash' && styles.paymentOptionSelected
+            ]}
+            onPress={() => setSelectedPayment('cash')}
+          >
+            <Text style={styles.paymentText}>Cash on Delivery</Text>
+            <View style={styles.radio}>
+              {selectedPayment === 'cash' && <View style={styles.radioSelected} />}
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Payment Summary */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Payment summary</Text>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Subtotal</Text>
+            <Text style={styles.summaryValue}>OMR {cart?.sub_total}</Text>
           </View>
 
-          {/* Payment Summary */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Payment summary</Text>
-
+          {cart?.discount > 0 && (
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>OMR {cart?.sub_total}</Text>
+              <Text style={styles.summaryLabel}>Discount</Text>
+              <Text style={styles.summaryValue}>-OMR {cart?.discount}</Text>
             </View>
+          )}
 
-            {cart?.discount > 0 && (
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Discount</Text>
-                <Text style={styles.summaryValue}>-OMR {cart?.discount}</Text>
-              </View>
-            )}
-
-
-            <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total Amount</Text>
-              <Text style={styles.totalValue}>OMR {cart?.grand_total}</Text>
-            </View>
+          <View style={[styles.summaryRow, styles.totalRow]}>
+            <Text style={styles.totalLabel}>Total Amount</Text>
+            <Text style={styles.totalValue}>OMR {cart?.grand_total}</Text>
           </View>
+        </View>
 
-          {/* Terms */}
-          <View style={styles.termsSection}>
-            <Text style={styles.termsText}>
-              By placing this order you agree to the credit card{' '}
-              <Text style={styles.termsLink}>terms & Conditions</Text>
-            </Text>
-          </View>
-        </ScrollView>
-      )}
+        {/* Terms */}
+        <View style={styles.termsSection}>
+          <Text style={styles.termsText}>
+            By placing this order you agree to the credit card{' '}
+            <Text style={styles.termsLink}>terms & Conditions</Text>
+          </Text>
+        </View>
+      </ScrollView>
+
       {/* Place Order Button */}
       <TouchableOpacity
-        style={styles.placeOrderButton}
+        style={[styles.placeOrderButton, placingOrder && styles.buttonDisabled]}
         onPress={handlePlaceOrder}
+        disabled={placingOrder}
       >
-        <Text style={styles.placeOrderText}>PLACE ORDER</Text>
+        {placingOrder ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.placeOrderText}>PLACE ORDER</Text>
+        )}
       </TouchableOpacity>
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.successModalContainer}>
+          <View style={styles.successModalContent}>
+            <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
+            <Text style={styles.successModalText}>Order placed successfully!</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -200,10 +242,6 @@ const styles = StyleSheet.create({
   changeLink: {
     color: '#E97777',
     fontSize: 14,
-  },
-  timeText: {
-    fontSize: 14,
-    color: '#666',
   },
   paymentOption: {
     flexDirection: 'row',
@@ -289,5 +327,35 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  successModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  successModalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  successModalText: {
+    fontSize: 16,
+    color: '#2C3639',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });

@@ -59,4 +59,13 @@ export const apiService = {
 
     // update wishlist
     updateWishlist: (data: any) => api.post(`/auth/wishlist-update`, data),
+
+    //placeOrder
+    placeOrder: (data: any) => api.post('/auth/order', data),
+
+    //get order
+    getOrders: () => api.get('/auth/orders'),
+
+    //get order details
+    getOrderDetails: (id: number) => api.get(`/auth/order/${id}`),
 };
