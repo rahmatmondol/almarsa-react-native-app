@@ -1,65 +1,49 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-
-// Mock data for search suggestions and history
-const TRENDING_SEARCHES = [
-  'Organic vegetables',
-  'Fresh fruits',
-  'Farm box',
-  'Seasonal produce',
-  'Local products',
-];
-
-const RECENT_SEARCHES = [
-  'Farm Veggie Box',
-  'Premium Selection',
-  'Organic Mix',
-  'Fresh Herbs',
-];
-
-const SUGGESTED_PRODUCTS = [
-  {
-    id: '1',
-    name: 'Farm Veggie Box',
-    category: 'Vegetables',
-    price: 3.500,
-  },
-  {
-    id: '2',
-    name: 'Organic Mix',
-    category: 'Vegetables',
-    price: 3.500,
-  },
-  {
-    id: '3',
-    name: 'Premium Selection',
-    category: 'Vegetables',
-    price: 3.500,
-  },
-];
+import { apiService } from './services/apiService';
+import useStore from './store/useStore';
+import ProductCart from './components/ProductCart';
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const { isAuthenticated } = useStore();
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    setIsSearching(true);
+    if (query.length >= 2) {
+      setIsSearching(true);
+      setLoading(true);
+      try {
+        const response = await apiService.searchProducts(query);
+        setProducts(response.products || []);
+        setTotalResults(response.totalResults || 0);
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setIsSearching(false);
+      setProducts([]);
+      setTotalResults(0);
+    }
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
     setIsSearching(false);
-  };
-
-  const handleProductPress = (productId: string) => {
-    router.push(`/product/${productId}`);
+    setProducts([]);
+    setTotalResults(0);
   };
 
   return (
@@ -87,71 +71,49 @@ export default function Search() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {!isSearching ? (
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#2C3639" />
+          </View>
+        ) : isSearching ? (
           <>
-            {/* Trending Searches */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Trending Searches</Text>
-              <View style={styles.trendingContainer}>
-                {TRENDING_SEARCHES.map((search, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.trendingItem}
-                    onPress={() => handleSearch(search)}
-                  >
-                    <Text style={styles.trendingText}>{search}</Text>
-                  </TouchableOpacity>
-                ))}
+            {/* Search Results */}
+            {products.length > 0 ? (
+              <View style={styles.resultsContainer}>
+                <Text style={styles.resultsText}>
+                  {totalResults} results for "{searchQuery}"
+                </Text>
+                <View style={styles.productsGrid}>
+                  {products.map((product) => (
+                    <ProductCart key={product.id} item={product} />
+                  ))}
+                </View>
               </View>
-            </View>
-
-            {/* Recent Searches */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recent Searches</Text>
-                <TouchableOpacity>
-                  <Text style={styles.clearText}>Clear all</Text>
-                </TouchableOpacity>
+            ) : (
+              <View style={styles.noResultsContainer}>
+                <Ionicons name="search-outline" size={64} color="#ccc" />
+                <Text style={styles.noResultsText}>
+                  No products found for "{searchQuery}"
+                </Text>
               </View>
-              {RECENT_SEARCHES.map((search, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.recentItem}
-                  onPress={() => handleSearch(search)}
-                >
-                  <View style={styles.recentItemLeft}>
-                    <Ionicons name="time-outline" size={20} color="#666" />
-                    <Text style={styles.recentText}>{search}</Text>
-                  </View>
-                  <TouchableOpacity>
-                    <Ionicons name="close" size={20} color="#666" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
-            </View>
+            )}
           </>
         ) : (
           <>
-            {/* Search Results */}
+            {/* Search Suggestions */}
             <View style={styles.section}>
-              <Text style={styles.resultsText}>
-                {SUGGESTED_PRODUCTS.length} results for "{searchQuery}"
-              </Text>
-              {SUGGESTED_PRODUCTS.map((product) => (
-                <TouchableOpacity
-                  key={product.id}
-                  style={styles.productItem}
-                  onPress={() => handleProductPress(product.id)}
-                >
-                  <View>
-                    <Text style={styles.productName}>{product.name}</Text>
-                    <Text style={styles.productCategory}>{product.category}</Text>
-                  </View>
-                  <Text style={styles.productPrice}>
-                    OMR {product.price.toFixed(3)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              <Text style={styles.sectionTitle}>Popular Categories</Text>
+              <View style={styles.categoriesGrid}>
+                {['Vegetables', 'Fruits', 'Meat', 'Fish', 'Dairy', 'Bakery'].map((category) => (
+                  <TouchableOpacity
+                    key={category}
+                    style={styles.categoryCard}
+                    onPress={() => handleSearch(category)}
+                  >
+                    <Text style={styles.categoryText}>{category}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </>
         )}
@@ -193,82 +155,62 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
   section: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#2C3639',
     marginBottom: 16,
   },
-  clearText: {
-    color: '#E97777',
-    fontSize: 14,
-  },
-  trendingContainer: {
+  categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  trendingItem: {
+  categoryCard: {
     backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  trendingText: {
-    color: '#2C3639',
-    fontSize: 14,
-  },
-  recentItem: {
-    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: '48%',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
   },
-  recentItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  recentText: {
-    color: '#2C3639',
+  categoryText: {
     fontSize: 14,
+    color: '#2C3639',
+    fontWeight: '500',
+  },
+  resultsContainer: {
+    padding: 16,
   },
   resultsText: {
     fontSize: 14,
     color: '#666',
     marginBottom: 16,
   },
-  productItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    padding: 40,
   },
-  productName: {
+  noResultsText: {
     fontSize: 16,
-    color: '#2C3639',
-    marginBottom: 4,
-  },
-  productCategory: {
-    fontSize: 14,
     color: '#666',
+    textAlign: 'center',
+    marginTop: 16,
   },
-  productPrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#E97777',
+  productsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
   },
 });

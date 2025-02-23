@@ -14,6 +14,9 @@ export const apiService = {
     // get shop
     getShop: () => api.get(`/shop`),
 
+    //saerch
+    searchProducts: (query: string) => api.get(`/product-search?search=${query}`),
+
     // get category archive
     getCategoryArchive: (id: any, limit: number, offset: number) => api.get(`/category/${id}?limit=${limit}&offset=${offset}`),
 
@@ -24,10 +27,6 @@ export const apiService = {
     // Categories
     getCategories: () => api.get('/categories'),
     getCategory: (id: string) => api.get(`/categories/${id}`),
-
-    // Orders
-    getOrders: () => api.get('/orders'),
-    createOrder: (data: any) => api.post('/orders', data),
 
     // Auth
     login: (data: any) => api.post('/login', data),

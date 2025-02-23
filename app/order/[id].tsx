@@ -184,7 +184,7 @@ export default function OrderDetails() {
           </View>
           <View style={styles.paymentDetails}>
             <Text style={styles.paymentMethod}>
-              Payment Method: {order.payment_method || 'Not specified'}
+              Payment Method: {order.payment_method || 'Cash on Delivery'}
             </Text>
             {order.payment_reference && (
               <Text style={styles.paymentReference}>

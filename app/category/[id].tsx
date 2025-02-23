@@ -1,12 +1,12 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import Banner from '../components/Banner';
 import { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ProductCart from '../components/ProductCart';
 
 export default function CategoryArchive() {
   const { id } = useLocalSearchParams();
@@ -51,25 +51,8 @@ export default function CategoryArchive() {
     }
   };
 
-  const renderProduct = ({ item }) => (
-    <TouchableOpacity
-      style={styles.productCard}
-      onPress={() => router.push(`/product/${item.id}`)}
-    >
-      <Image
-        source={{ uri: item.media.mainMedia.image.url }}
-        style={styles.productImage}
-      />
-      <View style={styles.productContent}>
-        <Text style={styles.productTitle}>{item.name}</Text>
-        <View style={styles.priceContainer}>
-          <Text style={styles.price}>OMR {item.price.discountedPrice}</Text>
-          {item.discount.value > 0 && (
-            <Text style={styles.wasPrice}>was {item.price.price}</Text>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
+  const renderProductCard = ({ item }) => (
+    <ProductCart item={item} key={item.id} />
   );
 
   const renderFooter = () => {
@@ -105,11 +88,12 @@ export default function CategoryArchive() {
 
       <FlatList
         data={products}
-        renderItem={renderProduct}
+        renderItem={renderProductCard}
         keyExtractor={item => item.id.toString()}
         numColumns={2}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.grid}
+        columnWrapperStyle={styles.columnWrapperStyle}
         ListHeaderComponent={
           <>
             <Banner
@@ -135,41 +119,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   grid: {
-    padding: 0,
   },
-  productCard: {
-    flex: 1,
-    margin: 8,
-    maxWidth: '50%',
-  },
-  productImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  productContent: {
-    padding: 8,
-  },
-  productTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  price: {
-    color: '#E97777',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  wasPrice: {
-    color: '#999',
-    fontSize: 14,
-    textDecorationLine: 'line-through',
+  columnWrapperStyle: {
+    gap: 16,
+    justifyContent: 'space-around',
+    paddingHorizontal: 10,
+    marginTop: 16,
   },
   noProducts: {
     fontSize: 16,
@@ -197,5 +152,18 @@ const styles = StyleSheet.create({
   loaderContainer: {
     paddingVertical: 20,
     alignItems: 'center',
+  },
+
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 16,
   },
 });
