@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { apiService } from '@/app/services/apiService';
+import { apiService } from '@/app/(tabs)/services/apiService';
 import useStore from '@/app/store/useStore';
 
 export default function OrderHistory() {

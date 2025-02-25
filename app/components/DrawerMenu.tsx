@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
-import { apiService } from '../services/apiService';
+import { apiService } from '@/app/(tabs)/services/apiService';
 
 export default function DrawerMenu({ onClose }: { onClose: () => void }) {
   const [expandedCategory, setExpandedCategory] = useState<number | null>(null);

@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import DrawerMenu from './DrawerMenu';
+import DrawerMenu from '@/app/components/DrawerMenu';
 import { useState } from 'react';
-import useStore from '../store/useStore';
+import useStore from '@/app/store/useStore';
 interface HeaderProps {
     title: string;
     onBack?: () => void;

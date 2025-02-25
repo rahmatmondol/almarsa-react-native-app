@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import Header from '../components/Header';
-import Banner from '../components/Banner';
+import Header from '../../components/Header';
+import Banner from '../../components/Banner';
 import { useEffect, useState } from 'react';
-import { apiService } from '../services/apiService';
+import { apiService } from '@/app/(tabs)/services/apiService';
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import ProductCart from '../components/ProductCart';
+import ProductCart from '@/app/components/ProductCart';
 
 export default function CategoryArchive() {
   const { id } = useLocalSearchParams();

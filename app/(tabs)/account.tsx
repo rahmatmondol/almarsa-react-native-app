@@ -75,7 +75,7 @@ export default function Account() {
 
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="call-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{user?.data.phone}</Text>
+            <Text style={styles.infoText}>{user?.data.phone || 'N/A'}</Text>
           </TouchableOpacity>
         </View>
 

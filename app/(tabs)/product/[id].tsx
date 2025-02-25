@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Dimensions, Modal, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { apiService } from '../services/apiService';
+import { apiService } from '@/app/(tabs)/services/apiService';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import RenderHtml from 'react-native-render-html';
-import useStore from '../store/useStore';
+import useStore from '@/app/store/useStore';
 
 const { width } = Dimensions.get('window');
 

@@ -2,9 +2,9 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image,
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { apiService } from './services/apiService';
-import useStore from './store/useStore';
-import ProductCart from './components/ProductCart';
+import { apiService } from '@/app/(tabs)/services/apiService';
+import useStore from '@/app/store/useStore';
+import ProductCart from '@/app/components/ProductCart';
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');

@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIn
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { apiService } from '../services/apiService';
+import { apiService } from '@/app/(tabs)/services/apiService';
 
 export default function OrderDetails() {
   const { id } = useLocalSearchParams();

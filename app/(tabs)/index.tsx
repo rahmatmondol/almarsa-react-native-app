@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import Banner from '../components/Banner';
 import { useEffect, useState } from 'react';
-import { apiService } from '../services/apiService';
+import { apiService } from './services/apiService';
 
 export default function Home() {
 
