@@ -25,13 +25,13 @@ export default function TabLayout() {
         setBasket(parseInt(basketCount || '0', 10));
         setWishlist(parseInt(wishlistCount || '0', 10));
       } else {
-        logout();
-        router.replace('/auth');
+        // logout();
+        // router.replace('/auth');
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
-      logout();
-      router.replace('/auth');
+      // console.error('Error loading user data:', error);
+      // logout();
+      // router.replace('/auth');
     }
   };
 
@@ -100,17 +100,13 @@ export default function TabLayout() {
           ),
         }}
       />
-
-      <Tabs.Screen name="auth" options={{ href: null }} />
       <Tabs.Screen name="change-email" options={{ href: null }} />
       <Tabs.Screen name="change-password" options={{ href: null }} />
       <Tabs.Screen name="edit-account" options={{ href: null }} />
       <Tabs.Screen name="checkout" options={{ href: null }} />
       <Tabs.Screen name="edit-address" options={{ href: null }} />
-      <Tabs.Screen name="login" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="orders" options={{ href: null }} />
-      <Tabs.Screen name="register" options={{ href: null }} />
       <Tabs.Screen name="search" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="shop" options={{ href: null }} />
@@ -118,7 +114,6 @@ export default function TabLayout() {
       <Tabs.Screen name="order/[id]" options={{ href: null }} />
       <Tabs.Screen name="wishlist" options={{ href: null }} />
       <Tabs.Screen name="product/[id]" options={{ href: null }} />
-
     </Tabs>
   );
 }

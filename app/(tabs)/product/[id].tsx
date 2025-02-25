@@ -30,8 +30,8 @@ export default function ProductPage() {
             const res = await apiService.getProduct(id);
             setProduct(res.product);
         } catch (error) {
-            console.error('Error fetching product:', error);
-            Alert.alert('Error', 'Failed to load product details');
+            // console.error('Error fetching product:', error);
+            // Alert.alert('Error', 'Failed to load product details');
         } finally {
             setLoading(false);
         }

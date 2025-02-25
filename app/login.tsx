@@ -12,6 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const { setUser, setBasket, setWishlist } = useStore();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -21,12 +22,8 @@ export default function Login() {
 
     try {
       setLoading(true);
+      setError(null);
       const response = await apiService.login({ email, password });
-      
-      if (response.error) {
-        alert(response.message);
-        return;
-      }
 
       // Store user data securely
       await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
@@ -44,8 +41,8 @@ export default function Login() {
 
       router.replace('/(tabs)');
     } catch (error: any) {
-      alert(error.message || 'Login failed');
-      console.error('Login error:', error);
+      setError(error.message);
+      console.log(error);
     } finally {
       setLoading(false);
     }
@@ -65,6 +62,12 @@ export default function Login() {
         <Text style={styles.welcomeText}>
           Welcome back, glad to see{'\n'}you, Again!
         </Text>
+
+        {error !== null && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         <View style={styles.form}>
           <TextInput
@@ -101,7 +104,7 @@ export default function Login() {
             <Text style={styles.forgotPassword}>Forgot your password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
             onPress={handleLogin}
             disabled={loading}
@@ -238,5 +241,13 @@ const styles = StyleSheet.create({
   registerLink: {
     color: '#E97777',
     fontWeight: '600',
+  },
+  errorContainer: {
+    marginTop: 4,
+    paddingHorizontal: 4,
+  },
+  errorText: {
+    color: '#E97777',
+    fontSize: 16,
   },
 });
