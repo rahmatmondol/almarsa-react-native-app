@@ -87,11 +87,12 @@ api.interceptors.response.use(
     // Handle other errors
     if (error.response) {
       // Server responded with an error (4xx or 5xx)
-      const { status, data } = error.response;
+      const { status, data, } = error.response;
       return Promise.reject({
         message: data.message || 'An error occurred',
         code: data.code || `HTTP_${status}`,
         status,
+        errors: data.errors,
       });
     } else if (error.request) {
       // No response received (network error)

@@ -8,10 +8,9 @@ export default function EditAccount() {
     email: 'johndoe@gmail.com',
     firstName: 'john',
     lastName: 'Doe',
-    dateOfBirth: '',
     gender: 'male',
-    receiveOffers: false,
-    newsletter: false,
+    receiveOffers: true,
+    newsletter: true,
   });
 
   const handleBack = () => {
@@ -65,17 +64,6 @@ export default function EditAccount() {
               value={formData.lastName}
               onChangeText={(text) => setFormData({ ...formData, lastName: text })}
             />
-          </View>
-
-          {/* Date of Birth */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Date of birth (optional)</Text>
-            <TouchableOpacity style={styles.dateInput}>
-              <Text style={styles.dateInputText}>
-                {formData.dateOfBirth || 'Select date'}
-              </Text>
-              <Ionicons name="calendar-outline" size={24} color="#666" />
-            </TouchableOpacity>
           </View>
 
           {/* Gender Selection */}

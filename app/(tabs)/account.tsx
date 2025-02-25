@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import useStore from '../store/useStore';
 
 export default function Account() {
-
   const { user, logout, isAuthenticated } = useStore();
 
   useEffect(() => {
@@ -43,6 +42,8 @@ export default function Account() {
     return null;
   }
 
+  console.log(user);
+
   return (
     <ScrollView style={styles.container}>
       <Header title="My Account" />
@@ -51,16 +52,16 @@ export default function Account() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Hero Section */}
-        {user?.image &&
+        {user?.data.image &&
           <View style={styles.heroSection}>
             <Image
-              source={{ uri: user?.image }}
+              source={{ uri: user?.data.image }}
               style={styles.heroImage}
             />
             <View style={styles.heroOverlay} />
             <View style={styles.userInfo}>
-              <Image source={{ uri: user?.image }} style={styles.avatar} />
-              <Text style={styles.userName}>{user?.data?.name}</Text>
+              <Image source={{ uri: user?.data.image }} style={styles.avatar} />
+              <Text style={styles.userName}>{user?.data.name}</Text>
             </View>
           </View>
         }
@@ -69,12 +70,12 @@ export default function Account() {
         <View style={styles.section}>
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="mail-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{user?.email}</Text>
+            <Text style={styles.infoText}>{user?.data.email}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="call-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{user?.phone}</Text>
+            <Text style={styles.infoText}>{user?.data.phone}</Text>
           </TouchableOpacity>
         </View>
 
