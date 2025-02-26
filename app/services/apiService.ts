@@ -31,6 +31,7 @@ export const apiService = {
     // Auth
     login: (data: any) => api.post('/login', data),
     register: (data: any) => api.post('/register', data),
+    updateProfile: (data: any) => api.post('/auth/update-profile', data),
 
     // add to cart
     addToCart: (data: any) => api.post('/auth/cart', data),

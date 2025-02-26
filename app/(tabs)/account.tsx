@@ -51,26 +51,12 @@ export default function Account() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Hero Section */}
-        {user?.data.image &&
-          <View style={styles.heroSection}>
-            <Image
-              source={{ uri: user?.data.image }}
-              style={styles.heroImage}
-            />
-            <View style={styles.heroOverlay} />
-            <View style={styles.userInfo}>
-              <Image source={{ uri: user?.data.image }} style={styles.avatar} />
-              <Text style={styles.userName}>{user?.data.name}</Text>
-            </View>
-          </View>
-        }
 
         {/* Contact Information */}
         <View style={styles.section}>
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="mail-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{user?.data.email}</Text>
+            <Text style={styles.infoText}>{user?.data.email || 'N/A'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.infoItem}>
