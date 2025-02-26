@@ -68,4 +68,10 @@ export const apiService = {
 
     //get order details
     getOrderDetails: (id: number) => api.get(`/auth/order/${id}`),
+    // address
+    getAddresses: () => api.get('/auth/get-addresses'),
+    getAddress: (id: number) => api.get(`/auth/get-address/${id}`),
+    addAddress: (data: any) => api.post('/auth/add-address', data),
+    updateAddress: (id: number, data: any) => api.post(`/auth/update-address/${id}`, data),
+    deleteAddress: (id: number) => api.delete(`/auth/addresses/${id}`),
 };

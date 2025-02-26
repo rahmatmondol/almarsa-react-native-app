@@ -90,7 +90,7 @@ export default function Account() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/edit-address')}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/addresses')}>
             <View style={styles.actionIcon}>
               <Ionicons name="location-outline" size={24} color="#E97777" />
             </View>

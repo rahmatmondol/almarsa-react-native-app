@@ -1,36 +1,15 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
 import useStore from '@/app/store/useStore';
 
-// Mock data for addresses
-const MOCK_ADDRESSES = [
-    {
-        id: 1,
-        title: 'Delivery Address 1',
-        details: 'Building 123, Apartment 45, Street 67, Block 8, Way 9',
-        isDefault: true
-    },
-    {
-        id: 2,
-        title: 'Delivery Address 2',
-        details: 'Villa 456, Street 78, Block 9, Way 10',
-        isDefault: false
-    },
-    {
-        id: 3,
-        title: 'Delivery Address 3',
-        details: 'Building 789, Apartment 12, Street 34, Block 5, Way 6',
-        isDefault: false
-    },
-];
-
 export default function Addresses() {
-    const [addresses, setAddresses] = useState(MOCK_ADDRESSES);
-    const [loading, setLoading] = useState(false);
-    const [selectedAddress, setSelectedAddress] = useState<number | null>(1); // Default to first address
+    const [addresses, setAddresses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
     const { isAuthenticated } = useStore();
 
     useEffect(() => {
@@ -39,42 +18,78 @@ export default function Addresses() {
             return;
         }
 
-        // In a real app, you would fetch addresses from the API
-        // loadAddresses();
+        loadAddresses();
     }, [isAuthenticated]);
 
     const loadAddresses = async () => {
         try {
             setLoading(true);
-            // const response = await apiService.getAddresses();
-            // setAddresses(response.data || []);
+            const response = await apiService.getAddresses();
+
+            if (response.success) {
+                setAddresses(response.addresses || []);
+
+                // Set default address as selected if available
+                const defaultAddress = response.addresses.find(addr => addr.is_default);
+                if (defaultAddress) {
+                    setSelectedAddress(defaultAddress.id);
+                } else if (response.addresses.length > 0) {
+                    setSelectedAddress(response.addresses[0].id);
+                }
+            } else {
+                console.error('Failed to load addresses:', response.message);
+            }
         } catch (error) {
             console.error('Error loading addresses:', error);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        loadAddresses();
+    }, []);
 
     const handleBack = () => {
         router.back();
     };
 
     const handleAddAddress = () => {
-        router.push('/edit-address');
+        router.push('/add-address');
     };
 
-    const handleEditAddress = (id: number) => {
+    const handleEditAddress = (id) => {
         router.push({
             pathname: '/edit-address',
             params: { id }
         });
     };
 
-    const handleSelectAddress = (id: number) => {
+    const handleSelectAddress = (id) => {
         setSelectedAddress(id);
     };
 
-    if (loading) {
+    const formatAddressDetails = (address) => {
+        const parts = [];
+
+        if (address.is_apartment) {
+            if (address.building_name) parts.push(address.building_name);
+            if (address.apartment_number) parts.push(`Apt. ${address.apartment_number}`);
+            if (address.floor) parts.push(`Floor ${address.floor}`);
+        } else {
+            if (address.house_number) parts.push(`House ${address.house_number}`);
+        }
+
+        if (address.street) parts.push(address.street);
+        if (address.block) parts.push(`Block ${address.block}`);
+        if (address.way) parts.push(`Way ${address.way}`);
+
+        return parts.join(', ');
+    };
+
+    if (loading && !refreshing) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#2C3639" />
@@ -95,7 +110,18 @@ export default function Addresses() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={["#E97777"]}
+                        tintColor="#E97777"
+                    />
+                }
+            >
                 {addresses.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="location-outline" size={64} color="#ccc" />
@@ -117,8 +143,11 @@ export default function Addresses() {
                                 <View style={styles.addressInfo}>
                                     <Ionicons name="location-outline" size={24} color="#2C3639" />
                                     <View style={styles.addressTextContainer}>
-                                        <Text style={styles.addressTitle}>{address.title}</Text>
-                                        <Text style={styles.addressDetails}>{address.details}</Text>
+                                        <Text style={styles.addressTitle}>
+                                            {address.address || (address.is_apartment ? 'Apartment' : 'House')}
+                                        </Text>
+                                        <Text style={styles.addressDetails}>{formatAddressDetails(address)}</Text>
+                                        <Text style={styles.addressPhone}>Phone: {address.phone}</Text>
                                     </View>
                                 </View>
                                 <TouchableOpacity
@@ -237,7 +266,17 @@ const styles = StyleSheet.create({
         color: '#2C3639',
         marginBottom: 4,
     },
+    defaultBadge: {
+        color: '#E97777',
+        fontWeight: '400',
+        fontSize: 14,
+    },
     addressDetails: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 4,
+    },
+    addressPhone: {
         fontSize: 14,
         color: '#666',
     },

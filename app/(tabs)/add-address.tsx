@@ -1,17 +1,12 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Modal } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
 import useStore from '@/app/store/useStore';
 
-export default function EditAddress() {
-  const params = useLocalSearchParams();
-  const addressId = params.id ? String(params.id) : null;
-  const isEditing = !!addressId;
-
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+export default function AddAddress() {
+  const [loading, setSaving] = useState(false);
   const [addressType, setAddressType] = useState<'apartments' | 'house'>('apartments');
   const [formData, setFormData] = useState({
     title: '',
@@ -28,56 +23,6 @@ export default function EditAddress() {
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { isAuthenticated } = useStore();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/auth');
-      return;
-    }
-
-    if (isEditing) {
-      loadAddress();
-    }
-  }, [isAuthenticated, addressId]);
-
-  const loadAddress = async () => {
-    try {
-      setLoading(true);
-      const response = await apiService.getAddress(addressId);
-
-      if (response.success) {
-        const address = response.address;
-
-        // Set address type based on is_apartment and is_house flags
-        setAddressType(address.is_apartment ? 'apartments' : 'house');
-
-        // Set form data
-        setFormData({
-          title: address.address || '',
-          buildingName: address.building_name || '',
-          houseNo: address.house_number || '',
-          aptNumber: address.apartment_number || '',
-          floor: address.floor || '',
-          street: address.street || '',
-          block: address.block || '',
-          way: address.way || '',
-          phone: address.phone || '',
-          isDefault: !!address.is_default,
-        });
-      } else {
-        setErrors({ general: [response.message || 'Failed to load address'] });
-      }
-    } catch (error: any) {
-      console.log('Error loading address:', error);
-      if (error.errors) {
-        setErrors(error.errors);
-      } else {
-        setErrors({ general: ['Failed to load address. Please try again.'] });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleBack = () => {
     router.back();
@@ -96,11 +41,13 @@ export default function EditAddress() {
         if (!formData.street) validationErrors.street = ['Street is required'];
         if (!formData.block) validationErrors.block = ['Block is required'];
         if (!formData.phone) validationErrors.phone = ['Phone number is required'];
+        if (!formData.title) validationErrors.title = ['Address is required'];
       } else {
         if (!formData.houseNo) validationErrors.houseNo = ['House number is required'];
         if (!formData.street) validationErrors.street = ['Street is required'];
         if (!formData.block) validationErrors.block = ['Block is required'];
         if (!formData.phone) validationErrors.phone = ['Phone number is required'];
+        if (!formData.title) validationErrors.title = ['Address is required'];
       }
 
       if (Object.keys(validationErrors).length > 0) {
@@ -111,23 +58,24 @@ export default function EditAddress() {
 
       // Prepare data for API
       const addressData = {
-        address: formData.title || (addressType === 'apartments' ? 'Apartment' : 'House'),
+        address: formData.title,
         building_name: formData.buildingName,
-        house_number: formData.houseNo,
         apartment_number: formData.aptNumber,
-        floor: formData.floor,
-        street: formData.street,
+        house_number: formData.houseNo,
         block: formData.block,
+        street: formData.street,
+        floor: formData.floor,
         way: formData.way,
         phone: formData.phone,
         is_default: formData.isDefault,
         is_apartment: addressType === 'apartments',
-        is_house: addressType === 'house'
+        is_house: addressType === 'house',
       };
 
-      // Call API to update address
-      const response = await apiService.updateAddress(addressId, addressData);
-      console.log('Address updated:', response);
+      // Call API to add address
+      const response = await apiService.addAddress(addressData);
+      console.log('Address saved:', response);
+
       if (response.success) {
         // Show success modal
         setShowSuccessModal(true);
@@ -142,29 +90,21 @@ export default function EditAddress() {
         if (response.errors) {
           setErrors(response.errors);
         } else {
-          setErrors({ general: [response.message || 'Failed to update address'] });
+          setErrors({ general: [response.message || 'Failed to save address'] });
         }
       }
     } catch (error: any) {
-      console.log('Error updating address:', error);
+      console.log('Error saving address:', error);
 
       if (error.errors) {
         setErrors(error.errors);
       } else {
-        setErrors({ general: ['Failed to update address. Please try again.'] });
+        setErrors({ general: ['Failed to save address. Please try again.'] });
       }
     } finally {
       setSaving(false);
     }
   };
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2C3639" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -172,7 +112,7 @@ export default function EditAddress() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color="#2C3639" />
-          <Text style={styles.headerTitle}>Edit Address</Text>
+          <Text style={styles.headerTitle}>New Address</Text>
         </TouchableOpacity>
       </View>
 
@@ -389,11 +329,11 @@ export default function EditAddress() {
 
       {/* Save Button */}
       <TouchableOpacity
-        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+        style={[styles.saveButton, loading && styles.saveButtonDisabled]}
         onPress={handleSave}
-        disabled={saving}
+        disabled={loading}
       >
-        {saving ? (
+        {loading ? (
           <ActivityIndicator size="small" color="#fff" />
         ) : (
           <Text style={styles.saveButtonText}>Save</Text>
@@ -409,7 +349,7 @@ export default function EditAddress() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
-            <Text style={styles.modalText}>Address updated successfully!</Text>
+            <Text style={styles.modalText}>Address saved successfully!</Text>
           </View>
         </View>
       </Modal>
@@ -420,12 +360,6 @@ export default function EditAddress() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#fff',
   },
   header: {
