@@ -3,7 +3,7 @@ import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import useStore from '@/app/store/useStore';
-import { apiService } from '@/app/(tabs)/services/apiService';
+import { apiService } from '@/app/services/apiService';
 import * as SecureStore from 'expo-secure-store';
 
 export default function Register() {

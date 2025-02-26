@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Link, router } from 'expo-router';
 import Header from '../components/Header';
-import { apiService } from './services/apiService';
+import { apiService } from '../services/apiService';
 import useStore from '../store/useStore';
 
 export default function Basket() {

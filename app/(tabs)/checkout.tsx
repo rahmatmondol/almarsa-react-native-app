@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { apiService } from '@/app/(tabs)/services/apiService';
+import { apiService } from '@/app/services/apiService';
 import * as SecureStore from 'expo-secure-store';
 import useStore from '@/app/store/useStore';
 
