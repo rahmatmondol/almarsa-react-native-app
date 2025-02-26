@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import Header from '../../components/Header';
-import Banner from '../../components/Banner';
+import Header from '@/app/components/Header';
+import Banner from '@/app/components/Banner';
 import { useEffect, useState } from 'react';
 import { apiService } from '@/app/services/apiService';
 import { FlatList, ScrollView } from 'react-native-gesture-handler';

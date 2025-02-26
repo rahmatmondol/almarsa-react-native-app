@@ -1,13 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-  <!-- Network permissions -->
+  <!-- Required for internet access -->
   <uses-permission android:name="android.permission.INTERNET" />
-  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-  <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
-  <!-- Optional permissions -->
+  <!-- Optional: Only include if needed -->
   <uses-permission android:name="android.permission.VIBRATE" />
 
   <queries>
@@ -15,15 +11,6 @@
       <action android:name="android.intent.action.VIEW" />
       <category android:name="android.intent.category.BROWSABLE" />
       <data android:scheme="https" />
-      <data android:scheme="http" />
-      <data android:scheme="file" />
-      <data android:scheme="content" />
-      <data android:scheme="tel" />
-      <data android:scheme="sms" />
-      <data android:scheme="mailto" />
-      <data android:scheme="geo" />
-      <data android:scheme="market" />
-      <data android:scheme="maps" />
     </intent>
   </queries>
 
@@ -35,10 +22,7 @@
     android:allowBackup="false"
     android:theme="@style/AppTheme"
     android:supportsRtl="true"
-    android:usesCleartextTraffic="true"
-    android:hardwareAccelerated="true"
-    android:largeHeap="true"
-    android:requestLegacyExternalStorage="true">
+    android:usesCleartextTraffic="true"> <!-- Add this if using HTTP -->
 
     <activity
       android:name=".MainActivity"
@@ -46,9 +30,7 @@
       android:launchMode="singleTask"
       android:windowSoftInputMode="adjustResize"
       android:theme="@style/Theme.App.SplashScreen"
-      android:exported="true"
-      android:screenOrientation="portrait"
-      android:resizeableActivity="false">
+      android:exported="true">
       
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />

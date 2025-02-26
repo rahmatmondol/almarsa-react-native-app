@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import Header from '../components/Header';
-import Banner from '../components/Banner';
+import Header from '@/app/components/Header';
+import Banner from '@/app/components/Banner';
 
 export default function Contact() {
   const [name, setName] = useState('');

@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import Header from '../components/Header';
+import Header from '@/app/components/Header';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import useStore from '../store/useStore';
+import useStore from '@/app/store/useStore';
 
 export default function Account() {
   const { user, logout, isAuthenticated } = useStore();

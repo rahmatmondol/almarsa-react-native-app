@@ -1,4 +1,4 @@
-import api from '@/app/utils/api';
+import api from '../utils/api';
 import * as SecureStore from 'expo-secure-store';
 // is authenticated
 export const authToken = async () => {

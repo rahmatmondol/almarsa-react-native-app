@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, Image, ScrollView, Linking } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Header from '../components/Header';
-import Banner from '../components/Banner';
+import Header from '@/app/components/Header';
+import Banner from '@/app/components/Banner';
 
 const STEPS = [
   {

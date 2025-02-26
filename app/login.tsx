@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ActivityIndicator } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -14,40 +14,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // const handleLogin2 = async () => {
-  //   if (!email.trim() || !password.trim()) {
-  //     alert('Please enter a valid email and password');
-  //     return;
-  //   }
-
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
-  //     const response = await apiService.login({ email, password });
-
-  //     // Store user data securely
-  //     await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
-  //     await SecureStore.setItemAsync('authToken', response.token);
-  //     await SecureStore.setItemAsync('wishlist', response.wishlists_count.toString());
-  //     await SecureStore.setItemAsync('basket', response.cart_count.toString());
-
-  //     // Update global state
-  //     setUser({
-  //       token: response.token,
-  //       data: response.user,
-  //     });
-  //     setBasket(response.cart_count);
-  //     setWishlist(response.wishlists_count);
-
-  //     router.replace('/(tabs)');
-  //   } catch (error: any) {
-  //     setError(error.message);
-  //     console.log(error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       alert('Please enter a valid email and password');
@@ -57,39 +23,21 @@ export default function Login() {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await fetch('http://almarsa-dasboard.test/api/v1/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      console.log(data);
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
+      const response = await apiService.login({ email, password });
 
       // Store user data securely
-      await SecureStore.setItemAsync('userData', JSON.stringify(data.user));
-      await SecureStore.setItemAsync('authToken', data.token);
-      await SecureStore.setItemAsync('wishlist', data.wishlists_count.toString());
-      await SecureStore.setItemAsync('basket', data.cart_count.toString());
+      await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
+      await SecureStore.setItemAsync('authToken', response.token);
+      await SecureStore.setItemAsync('wishlist', response.wishlists_count.toString());
+      await SecureStore.setItemAsync('basket', response.cart_count.toString());
 
       // Update global state
       setUser({
-        token: data.token,
-        data: data.user,
+        token: response.token,
+        data: response.user,
       });
-      setBasket(data.cart_count);
-      setWishlist(data.wishlists_count);
+      setBasket(response.cart_count);
+      setWishlist(response.wishlists_count);
 
       router.replace('/(tabs)');
     } catch (error: any) {
