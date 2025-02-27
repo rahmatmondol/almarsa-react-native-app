@@ -1,9 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
 import useStore from '@/app/store/useStore';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Addresses() {
     const [addresses, setAddresses] = useState([]);
@@ -12,16 +13,12 @@ export default function Addresses() {
     const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
     const { isAuthenticated } = useStore();
 
-    useEffect(() => {
+    const loadAddresses = useCallback(async () => {
         if (!isAuthenticated) {
             router.replace('/auth');
             return;
         }
 
-        loadAddresses();
-    }, [isAuthenticated]);
-
-    const loadAddresses = async () => {
         try {
             setLoading(true);
             const response = await apiService.getAddresses();
@@ -45,15 +42,25 @@ export default function Addresses() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [isAuthenticated]);
+
+    // Use useFocusEffect to reload addresses whenever the screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            loadAddresses();
+            return () => {
+                // Cleanup function (optional)
+            };
+        }, [loadAddresses])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         loadAddresses();
-    }, []);
+    }, [loadAddresses]);
 
     const handleBack = () => {
-        router.push('/account');
+        router.back();
     };
 
     const handleAddAddress = () => {
