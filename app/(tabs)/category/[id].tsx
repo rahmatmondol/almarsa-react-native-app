@@ -100,7 +100,7 @@ export default function CategoryArchive() {
     <View style={styles.filters}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <TouchableOpacity style={[styles.filterButton, styles.filterButtonActive]}>
-          <Text style={styles.filterButtonText}>All Products</Text>
+          <Text style={styles.filterButtonText}>{page.name}</Text>
         </TouchableOpacity>
         {subCategories?.map((subCategory) => (
           <TouchableOpacity

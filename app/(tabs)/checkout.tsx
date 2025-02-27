@@ -1,31 +1,63 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert } from 'react-native';
-import { Link, router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Link, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
 import useStore from '@/app/store/useStore';
 
 export default function Checkout() {
+  const { orderId } = useLocalSearchParams();
   const [selectedPayment, setSelectedPayment] = useState('cash');
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const { isAuthenticated, user, basket, setBasket } = useStore();
+  const [successMessage, setSuccessMessage] = useState('Order placed successfully!');
+  const { isAuthenticated, setBasket } = useStore();
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [addresses, setAddresses] = useState([]);
-  const [orderId, setOrderId] = useState(null);
 
-  useEffect(() => {
-    // Check authentication in useEffect to avoid render loop
-    if (!isAuthenticated) {
-      router.replace('/auth');
-      return;
+  // Check authentication
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated) {
+        router.replace('/auth');
+      }
+    }, [isAuthenticated])
+  );
+
+  // Load data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        if (orderId) {
+          loadOrderDetails();
+        } else {
+          getCart();
+        }
+        loadAddresses();
+      }
+    }, [isAuthenticated, orderId])
+  );
+
+  const loadOrderDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getOrderDetails(orderId);
+      if (response.success) {
+        setCart(response.data);
+        setSuccessMessage('Your order will be recreated');
+      } else {
+        console.error('Failed to load order details:', response.message);
+        Alert.alert('Error', 'Failed to load order details');
+      }
+    } catch (error) {
+      console.error('Error loading order details:', error);
+      Alert.alert('Error', 'Failed to load order details');
+    } finally {
+      setLoading(false);
     }
-
-    getCart();
-    loadAddresses();
-  }, [isAuthenticated, basket]);
+  };
 
   const loadAddresses = async () => {
     try {
@@ -54,10 +86,10 @@ export default function Checkout() {
           setSelectedAddress(response.addresses[0]);
         }
       } else {
-        console.log('Failed to load addresses:', response.message);
+        console.error('Failed to load addresses:', response.message);
       }
     } catch (error) {
-      console.log('Error loading addresses:', error);
+      console.error('Error loading addresses:', error);
     }
   };
 
@@ -87,10 +119,12 @@ export default function Checkout() {
 
   const getCart = async () => {
     try {
+      setLoading(true);
       const res = await apiService.getCart();
       setCart(res.product);
     } catch (error) {
-      console.log('Error fetching cart:', error);
+      console.error('Error fetching cart:', error);
+      Alert.alert('Error', 'Failed to load cart');
     } finally {
       setLoading(false);
     }
@@ -104,22 +138,35 @@ export default function Checkout() {
 
     try {
       setPlacingOrder(true);
-      const response = await apiService.placeOrder({
-        address_id: selectedAddress?.id?.toString(),
-      });
+      let response;
+
+      if (orderId) {
+        // Reorder existing order
+        response = await apiService.orderAgain({
+          order_id: orderId,
+          address_id: selectedAddress.id.toString(),
+        });
+      } else {
+        // Place new order
+        response = await apiService.placeOrder({
+          address_id: selectedAddress.id.toString(),
+        });
+      }
 
       if (response.success) {
-        // Store the order ID for redirection
-        setOrderId(response.data?.id || null);
+        // Update success message based on order type
+        setSuccessMessage(orderId ? 'Order recreated successfully!' : 'Order placed successfully!');
         setShowSuccessModal(true);
-        setBasket({
-          count: 0,
-        });
+
+        // Reset basket count
+        setBasket(0);
+
         // Wait for 2 seconds before redirecting
         setTimeout(() => {
           setShowSuccessModal(false);
-          if (response.data?.id) {
-            router.replace(`/order/${response.data.id}`);
+          // Redirect to order details if we have an order ID, otherwise to orders list
+          if (response.order?.id) {
+            router.replace(`/order/${response.order.id}`);
           } else {
             router.replace('/orders');
           }
@@ -128,7 +175,7 @@ export default function Checkout() {
         Alert.alert("Error", response.message || "Failed to place order");
       }
     } catch (error) {
-      console.log('Error placing order:', error);
+      console.error('Error placing order:', error);
       Alert.alert('Error', 'Failed to place order. Please try again.');
     } finally {
       setPlacingOrder(false);
@@ -149,7 +196,7 @@ export default function Checkout() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color="#2C3639" />
-          <Text style={styles.headerTitle}>Check out</Text>
+          <Text style={styles.headerTitle}>{orderId ? 'Reorder' : 'Check out'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -200,19 +247,19 @@ export default function Checkout() {
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>OMR {cart?.sub_total}</Text>
+            <Text style={styles.summaryValue}>OMR {cart?.sub_total || '0.000'}</Text>
           </View>
 
           {cart?.discount > 0 && (
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Discount</Text>
-              <Text style={styles.summaryValue}>-OMR {cart?.discount}</Text>
+              <Text style={styles.discountValue}>-OMR {cart?.discount}</Text>
             </View>
           )}
 
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>OMR {cart?.grand_total}</Text>
+            <Text style={styles.totalValue}>OMR {cart?.grand_total || '0.000'}</Text>
           </View>
         </View>
 
@@ -234,7 +281,7 @@ export default function Checkout() {
         {placingOrder ? (
           <ActivityIndicator size="small" color="#fff" />
         ) : (
-          <Text style={styles.placeOrderText}>PLACE ORDER</Text>
+          <Text style={styles.placeOrderText}>{orderId ? 'REORDER' : 'PLACE ORDER'}</Text>
         )}
       </TouchableOpacity>
 
@@ -247,10 +294,12 @@ export default function Checkout() {
         <View style={styles.successModalContainer}>
           <View style={styles.successModalContent}>
             <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
-            <Text style={styles.successModalText}>Order placed successfully!</Text>
-            <Text style={styles.successModalSubtext}>
-              Order #{orderId} has been created
-            </Text>
+            <Text style={styles.successModalText}>{successMessage}</Text>
+            {orderId && (
+              <Text style={styles.successModalSubtext}>
+                Based on order #{orderId}
+              </Text>
+            )}
           </View>
         </View>
       </Modal>
@@ -376,6 +425,10 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 14,
     color: '#2C3639',
+  },
+  discountValue: {
+    fontSize: 14,
+    color: '#E97777',
   },
   totalRow: {
     borderTopWidth: 1,

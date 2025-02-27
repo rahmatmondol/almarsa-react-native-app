@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { Link, router } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, router, useFocusEffect } from 'expo-router';
 import Header from '@/app/components/Header';
 import { apiService } from '@/app/services/apiService';
 import useStore from '@/app/store/useStore';
@@ -13,17 +13,18 @@ export default function Basket() {
   const [editQuantity, setEditQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const { setBasket, isAuthenticated, basket } = useStore();
+  const { setBasket, isAuthenticated } = useStore();
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/auth');
-      return;
-    }
-    getCart();
-    console.log('Basket screen mounted');
-  }, []);
-  console.log('Basket screen rendered');
+  if (!isAuthenticated) {
+    router.replace('/auth');
+    return;
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      getCart();
+    }, [])
+  );
 
   const getCart = async () => {
     try {
@@ -36,6 +37,9 @@ export default function Basket() {
       }
     } catch (error) {
       console.log('Error fetching cart:', error);
+      setCart(null);
+      setCartItems([]);
+      setBasket(0);
     } finally {
       setLoading(false);
     }

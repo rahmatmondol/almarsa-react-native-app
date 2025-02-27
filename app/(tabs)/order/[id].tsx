@@ -223,7 +223,7 @@ export default function OrderDetails() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.reorderButton}
-          onPress={() => router.push(`/checkout?reorder=${order.id}`)}
+          onPress={() => router.push(`/checkout?orderId=${order.id}`)}
         >
           <Text style={styles.reorderButtonText}>REORDER</Text>
         </TouchableOpacity>

@@ -62,6 +62,7 @@ export const apiService = {
 
     //placeOrder
     placeOrder: (data: any) => api.post('/auth/order', data),
+    orderAgain: (data: any) => api.post('/auth/order-again', data),
 
     //get order
     getOrders: () => api.get('/auth/orders'),
