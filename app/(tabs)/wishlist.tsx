@@ -10,7 +10,7 @@ export default function Wishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const { setWishlist, isAuthenticated, setBasket } = useStore();
+  const { setWishlist, isAuthenticated, setBasket, wishlist } = useStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -18,7 +18,7 @@ export default function Wishlist() {
       return;
     }
     getWishlist();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, wishlist]);
 
   const getWishlist = async () => {
     try {
@@ -30,7 +30,7 @@ export default function Wishlist() {
         setWishlist(res.product.items.length);
       }
     } catch (error) {
-      console.error('Error fetching wishlist:', error);
+      console.log('Error fetching wishlist:', error);
     } finally {
       setLoading(false);
     }
@@ -121,14 +121,14 @@ export default function Wishlist() {
               </View>
             </View>
             <View style={styles.itemActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => handleRemoveItem(item.id)}
                 disabled={updating}
               >
-                <Ionicons 
-                  name="close-circle-outline" 
-                  size={24} 
-                  color={updating ? "#ccc" : "#E97777"} 
+                <Ionicons
+                  name="close-circle-outline"
+                  size={24}
+                  color={updating ? "#ccc" : "#E97777"}
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -136,10 +136,10 @@ export default function Wishlist() {
                 onPress={() => handleAddToCart(item)}
                 disabled={updating}
               >
-                <Ionicons 
-                  name="cart-outline" 
-                  size={24} 
-                  color={updating ? "#ccc" : "#666"} 
+                <Ionicons
+                  name="cart-outline"
+                  size={24}
+                  color={updating ? "#ccc" : "#666"}
                 />
               </TouchableOpacity>
             </View>

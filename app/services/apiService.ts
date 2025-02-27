@@ -73,5 +73,5 @@ export const apiService = {
     getAddress: (id: number) => api.get(`/auth/get-address/${id}`),
     addAddress: (data: any) => api.post('/auth/add-address', data),
     updateAddress: (id: number, data: any) => api.post(`/auth/update-address/${id}`, data),
-    deleteAddress: (id: number) => api.delete(`/auth/addresses/${id}`),
+    deleteAddress: (id: number) => api.delete(`/auth/delete-address/${id}`),
 };

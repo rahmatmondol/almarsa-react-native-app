@@ -23,7 +23,7 @@ export default function EditAccount() {
 
 
   const handleBack = () => {
-    router.back();
+    router.push('/account');
   };
 
   const handleSave = async () => {
@@ -58,7 +58,7 @@ export default function EditAccount() {
       setShowSuccessModal(true);
       setTimeout(() => {
         setShowSuccessModal(false);
-        router.replace('/(tabs)/account');
+        router.push('/account');
       }, 2000);
     } catch (error: any) {
       console.log('Profile update error:', error);

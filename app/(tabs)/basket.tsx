@@ -13,7 +13,7 @@ export default function Basket() {
   const [editQuantity, setEditQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const { setBasket, isAuthenticated } = useStore();
+  const { setBasket, isAuthenticated, basket } = useStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -21,7 +21,9 @@ export default function Basket() {
       return;
     }
     getCart();
-  }, [isAuthenticated]);
+    console.log('Basket screen mounted');
+  }, []);
+  console.log('Basket screen rendered');
 
   const getCart = async () => {
     try {
@@ -33,7 +35,7 @@ export default function Basket() {
         setBasket(res.product.items.length);
       }
     } catch (error) {
-      console.error('Error fetching cart:', error);
+      console.log('Error fetching cart:', error);
     } finally {
       setLoading(false);
     }
@@ -49,7 +51,7 @@ export default function Basket() {
         setBasket(res.cart.items.length);
       }
     } catch (error) {
-      console.error('Error removing item:', error);
+      console.log('Error removing item:', error);
     } finally {
       setUpdating(false);
     }
@@ -76,7 +78,7 @@ export default function Basket() {
         setBasket(res.cart.items.length);
       }
     } catch (error) {
-      console.error('Error updating cart:', error);
+      console.log('Error updating cart:', error);
     } finally {
       setUpdating(false);
     }
@@ -141,14 +143,14 @@ export default function Basket() {
               </View>
             </View>
             <View style={styles.itemActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => handleRemoveItem(item.id)}
                 disabled={updating}
               >
-                <Ionicons 
-                  name="close-circle-outline" 
-                  size={24} 
-                  color={updating ? "#ccc" : "#E97777"} 
+                <Ionicons
+                  name="close-circle-outline"
+                  size={24}
+                  color={updating ? "#ccc" : "#E97777"}
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -156,10 +158,10 @@ export default function Basket() {
                 onPress={() => handleEditItem(item)}
                 disabled={updating}
               >
-                <Ionicons 
-                  name="chevron-down" 
-                  size={24} 
-                  color={updating ? "#ccc" : "#666"} 
+                <Ionicons
+                  name="chevron-down"
+                  size={24}
+                  color={updating ? "#ccc" : "#666"}
                 />
               </TouchableOpacity>
             </View>
@@ -173,7 +175,7 @@ export default function Basket() {
             <Text style={styles.continueButtonText}>BACK TO SHOP</Text>
           </TouchableOpacity>
         </Link>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.checkoutButton}
           onPress={() => router.push('/checkout')}
         >

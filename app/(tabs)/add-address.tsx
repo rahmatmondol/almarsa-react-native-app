@@ -25,7 +25,7 @@ export default function AddAddress() {
   const { isAuthenticated } = useStore();
 
   const handleBack = () => {
-    router.back();
+    router.push('/addresses');
   };
 
   const handleSave = async () => {

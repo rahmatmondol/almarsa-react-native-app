@@ -53,7 +53,7 @@ export default function Addresses() {
     }, []);
 
     const handleBack = () => {
-        router.back();
+        router.push('/account');
     };
 
     const handleAddAddress = () => {
@@ -169,9 +169,9 @@ export default function Addresses() {
                 <View style={styles.footer}>
                     <TouchableOpacity
                         style={styles.saveButton}
-                        onPress={handleBack}
+                        onPress={() => router.push('/checkout')}
                     >
-                        <Text style={styles.saveButtonText}>SAVE</Text>
+                        <Text style={styles.saveButtonText}>CHECKOUT</Text>
                     </TouchableOpacity>
                 </View>
             )}

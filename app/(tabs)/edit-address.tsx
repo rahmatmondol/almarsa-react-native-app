@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Modal, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ export default function EditAddress() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [addressType, setAddressType] = useState<'apartments' | 'house'>('apartments');
   const [formData, setFormData] = useState({
     title: '',
@@ -27,6 +28,8 @@ export default function EditAddress() {
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Address updated successfully!');
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const { isAuthenticated } = useStore();
 
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function EditAddress() {
         setErrors({ general: [response.message || 'Failed to load address'] });
       }
     } catch (error: any) {
-      console.log('Error loading address:', error);
+      console.error('Error loading address:', error);
       if (error.errors) {
         setErrors(error.errors);
       } else {
@@ -80,7 +83,7 @@ export default function EditAddress() {
   };
 
   const handleBack = () => {
-    router.back();
+    router.push('/addresses');
   };
 
   const handleSave = async () => {
@@ -127,9 +130,10 @@ export default function EditAddress() {
 
       // Call API to update address
       const response = await apiService.updateAddress(addressId, addressData);
-      console.log('Address updated:', response);
+
       if (response.success) {
         // Show success modal
+        setSuccessMessage('Address updated successfully!');
         setShowSuccessModal(true);
 
         // Navigate back to addresses page after 2 seconds
@@ -146,7 +150,7 @@ export default function EditAddress() {
         }
       }
     } catch (error: any) {
-      console.log('Error updating address:', error);
+      console.error('Error updating address:', error);
 
       if (error.errors) {
         setErrors(error.errors);
@@ -155,6 +159,51 @@ export default function EditAddress() {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteConfirmation(true);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirmation(false);
+  };
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      setShowDeleteConfirmation(false);
+      const response = await apiService.deleteAddress(addressId);
+
+      if (response.success) {
+        // Show success modal
+        setSuccessMessage('Address deleted successfully!');
+        setShowSuccessModal(true);
+
+        // Navigate back to addresses page after 2 seconds
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          router.push('/addresses');
+        }, 2000);
+      } else {
+        // Handle API error
+        if (response.errors) {
+          setErrors(response.errors);
+        } else {
+          setErrors({ general: [response.message || 'Failed to delete address'] });
+        }
+      }
+    } catch (error: any) {
+      console.error('Error deleting address:', error);
+
+      if (error.errors) {
+        setErrors(error.errors);
+      } else {
+        setErrors({ general: ['Failed to delete address. Please try again.'] });
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -387,18 +436,31 @@ export default function EditAddress() {
         </View>
       </ScrollView>
 
-      {/* Save Button */}
-      <TouchableOpacity
-        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-        onPress={handleSave}
-        disabled={saving}
-      >
-        {saving ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={styles.saveButtonText}>Save</Text>
-        )}
-      </TouchableOpacity>
+      {/* Save Buttons */}
+      <View style={styles.saveButtonsContainer}>
+        <TouchableOpacity
+          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.deleteButton, deleting && styles.deleteButtonDisabled]}
+          onPress={confirmDelete}
+          disabled={deleting}
+        >
+          {deleting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Delete</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Success Modal */}
       <Modal
@@ -409,7 +471,38 @@ export default function EditAddress() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
-            <Text style={styles.modalText}>Address updated successfully!</Text>
+            <Text style={styles.modalText}>{successMessage}</Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={showDeleteConfirmation}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <Ionicons name="alert-circle" size={50} color="#E97777" />
+            <Text style={styles.confirmModalTitle}>Delete Address</Text>
+            <Text style={styles.confirmModalText}>
+              Are you sure you want to delete this address? This action cannot be undone.
+            </Text>
+            <View style={styles.confirmModalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={cancelDelete}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={handleDelete}
+              >
+                <Text style={styles.confirmButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -539,12 +632,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#2C3639',
   },
-  saveButton: {
-    backgroundColor: '#2C3639',
-    margin: 16,
+  saveButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    justifyContent: 'space-around',
+    padding: 16,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.7,
+  },
+  deleteButton: {
+    backgroundColor: '#E97777',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    width: '45%',
+  },
+  saveButton: {
+    backgroundColor: '#2C3639',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '45%',
   },
   saveButtonDisabled: {
     opacity: 0.7,
@@ -591,5 +703,61 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 16,
     textAlign: 'center',
+  },
+  confirmModalContent: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    width: '80%',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  confirmModalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#2C3639',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  confirmModalText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  confirmModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    gap: 16,
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2C3639',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#2C3639',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confirmButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#E97777',
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

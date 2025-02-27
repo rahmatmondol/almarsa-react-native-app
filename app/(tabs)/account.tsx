@@ -42,8 +42,6 @@ export default function Account() {
     return null;
   }
 
-  console.log(user);
-
   return (
     <ScrollView style={styles.container}>
       <Header title="My Account" />

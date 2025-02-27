@@ -71,6 +71,7 @@ export default function TabLayout() {
             <Ionicons name="basket" size={size} color={color} />
           ),
           tabBarBadge: basket > 0 ? basket.toString() : undefined,
+          
         }}
       />
       <Tabs.Screen
@@ -114,6 +115,8 @@ export default function TabLayout() {
       <Tabs.Screen name="order/[id]" options={{ href: null }} />
       <Tabs.Screen name="wishlist" options={{ href: null }} />
       <Tabs.Screen name="product/[id]" options={{ href: null }} />
+      <Tabs.Screen name="addresses" options={{ href: null }} />
+      <Tabs.Screen name="add-address" options={{ href: null }} />
     </Tabs>
   );
 }
