@@ -6,6 +6,7 @@ import { apiService } from '@/app/services/apiService';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import RenderHtml from 'react-native-render-html';
 import useStore from '@/app/store/useStore';
+import Header from '@/app/components/Header';
 
 const { width } = Dimensions.get('window');
 
@@ -195,14 +196,7 @@ export default function ProductPage() {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleBack}>
-                    <Ionicons name="chevron-back" size={24} color="#2C3639" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleClose}>
-                    <Ionicons name="close" size={24} color="#2C3639" />
-                </TouchableOpacity>
-            </View>
+            <Header title="Order Details" onBack={handleBack} />
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Product Image Slider */}
