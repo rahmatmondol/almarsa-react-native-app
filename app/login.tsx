@@ -1,18 +1,21 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useStore from '@/app/store/useStore';
 import { apiService } from '@/app/services/apiService';
 import * as SecureStore from 'expo-secure-store';
+import { ref, onValue, off } from 'firebase/database';
+import { database } from '@/firebaseConfig';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { setUser, setBasket, setWishlist } = useStore();
+  const { setUser, setBasket, setWishlist, setNotifications } = useStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -39,9 +42,26 @@ export default function Login() {
       setBasket(response.cart_count);
       setWishlist(response.wishlists_count);
 
+      // Fetch notifications data
+      const notificationsReference = ref(database, `notifications/user_${response.user.id}`);
+      onValue(notificationsReference, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const notifications = Object.keys(data)
+            .map((key) => ({
+              id: key,
+              ...data[key],
+            }))
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          const unreadCount = notifications.filter(notification => !notification.read_at).length;
+          setNotifications(unreadCount);
+        }
+      });
+
+      // Now navigate to the main app
       router.replace('/(tabs)');
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error) {
+      setError(error.message || "Login failed");
       console.log(error);
     } finally {
       setLoading(false);

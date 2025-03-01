@@ -71,7 +71,7 @@ export default function TabLayout() {
             <Ionicons name="basket" size={size} color={color} />
           ),
           tabBarBadge: basket > 0 ? basket.toString() : undefined,
-          
+
         }}
       />
       <Tabs.Screen

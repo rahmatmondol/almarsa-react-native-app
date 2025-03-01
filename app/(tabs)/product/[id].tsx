@@ -228,11 +228,11 @@ export default function ProductPage() {
                     <Text style={styles.title}>{product.name}</Text>
                     <View style={styles.priceContainer}>
                         <Text style={styles.price}>
-                            OMR {product.price.discountedPrice}
+                            {product.price.formatted.discountedPrice}
                         </Text>
                         {product.discount.value > 0 && (
                             <Text style={styles.wasPrice}>
-                                was {product.price.price}
+                                was {product.price.formatted.price}
                             </Text>
                         )}
                     </View>
