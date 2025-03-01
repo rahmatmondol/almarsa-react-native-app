@@ -75,4 +75,6 @@ export const apiService = {
     addAddress: (data: any) => api.post('/auth/add-address', data),
     updateAddress: (id: number, data: any) => api.post(`/auth/update-address/${id}`, data),
     deleteAddress: (id: number) => api.delete(`/auth/delete-address/${id}`),
+
+    updatePushToken: (data: any) => api.post('/auth/update-push-token', data),
 };

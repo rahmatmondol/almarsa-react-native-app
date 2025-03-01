@@ -57,6 +57,6 @@ const styles = StyleSheet.create({
         top: 30,
     },
     heroTextAccent: {
-        color: '#E97777',
+        color: '#fff',
     },
 });

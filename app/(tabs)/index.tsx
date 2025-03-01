@@ -31,6 +31,7 @@ export default function Home() {
         <Banner
           image={homeData.image || null}
           icon={homeData.icon || null}
+          title={homeData.title || ''}
         />
 
         <View style={styles.menuGrid}>
@@ -49,7 +50,10 @@ export default function Home() {
                     style={styles.menuItemIcon}
                   />
                 ) : (
-                  <Ionicons name={item.icon} size={100} color="#E97777" />
+                  <Image
+                    source={require('@/assets/images/shop-icon.png')}
+                    style={styles.menuItemIcon}
+                  />
                 )}
                 {item.ribbon && (
                   <View style={styles.ribbon}>

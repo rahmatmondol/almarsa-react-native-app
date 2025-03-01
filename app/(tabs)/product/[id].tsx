@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Dimensions, Modal, Alert } from 'react-native';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -279,7 +279,6 @@ export default function ProductPage() {
                         <View key={index} style={styles.section}>
                             <Text style={styles.sectionTitle}>{section.title}</Text>
                             <RenderHtml
-                                contentWidth={width - 32} // Account for padding
                                 source={{ html: section.description || '<p>No information available</p>' }}
                             />
                         </View>
@@ -329,7 +328,7 @@ export default function ProductPage() {
                     <View style={styles.successModalContent}>
                         <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
                         <Text style={styles.successModalText}>{successMessage}</Text>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.viewBasketButton}
                             onPress={() => {
                                 setShowSuccessModal(false);
@@ -344,9 +343,9 @@ export default function ProductPage() {
 
             {/* Full-Size Image Modal */}
             {isModalVisible && (
-                <Modal 
-                    visible={true} 
-                    transparent={true} 
+                <Modal
+                    visible={true}
+                    transparent={true}
                     onRequestClose={closeImageModal}
                 >
                     <View style={styles.imageViewerContainer}>
