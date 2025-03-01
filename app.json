@@ -13,8 +13,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#2C3639"
       },
       "package": "com.anonymous.almarsaapp"
     },
@@ -28,9 +28,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/almarsa-splash-screen.mp4",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0A0A0A"
+          "backgroundColor": "#2C3639"
         }
       ],
       "expo-secure-store"

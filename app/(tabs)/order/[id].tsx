@@ -28,7 +28,7 @@ export default function OrderDetails() {
   };
 
   const handleBack = () => {
-    router.push('/orders');
+    router.back();
   };
 
   const formatAddressDetails = (address) => {

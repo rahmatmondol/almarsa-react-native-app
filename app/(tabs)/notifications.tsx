@@ -13,51 +13,40 @@ export default function Notifications() {
 
   // Fetch notifications on component mount
   useEffect(() => {
-    let notificationsRef = null;
+    if (!user?.data?.id) {
+      setLoading(false);
+      return;
+    }
 
-    const fetchNotifications = () => {
-      if (!user?.data?.id) {
-        setLoading(false);
-        return;
+    const notificationsRef = ref(database, `notifications/user_${user.data.id}`);
+
+    const fetchNotifications = onValue(notificationsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Convert Firebase object to an array and sort by date (newest first)
+        const firebaseNotifications = Object.keys(data)
+          .map((key) => ({
+            id: key,
+            ...data[key],
+          }))
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        // Calculate unread count
+        const unreadCount = firebaseNotifications.filter(notification => !notification.read_at).length;
+        setNotifications(unreadCount);
+        setAllNotifications(firebaseNotifications);
+      } else {
+        setAllNotifications([]);
+        setNotifications(0);
       }
-
-      setLoading(true);
-      notificationsRef = ref(database, `notifications/user_${user.data.id}`);
-
-      onValue(notificationsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          // Convert Firebase object to an array and sort by date (newest first)
-          const firebaseNotifications = Object.keys(data)
-            .map((key) => ({
-              id: key,
-              ...data[key],
-            }))
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-          // Calculate unread count AFTER we have the actual notifications array
-          const unreadCount = firebaseNotifications.filter(notification => !notification.read_at).length;
-          setNotifications(unreadCount);
-          setAllNotifications(firebaseNotifications);
-        } else {
-          setAllNotifications([]);
-          setNotifications(0);
-        }
-        setLoading(false);
-      }, (error) => {
-        console.log('Error fetching notifications:', error);
-        setLoading(false);
-      });
-    };
-
-    fetchNotifications();
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching notifications:', error);
+      setLoading(false);
+    });
 
     // Clean up listener on unmount
-    return () => {
-      if (notificationsRef) {
-        off(notificationsRef);
-      }
-    };
+    return () => off(notificationsRef);
   }, [user, setNotifications]);
 
   // Mark notification as read
@@ -65,53 +54,37 @@ export default function Notifications() {
     if (!user?.data?.id) return;
 
     const notificationRef = ref(database, `notifications/user_${user.data.id}/${notification.id}`);
-
-    // Use current date for read_at timestamp
     const now = new Date().toISOString();
 
     update(notificationRef, { read_at: now })
       .then(() => {
-        // Update local state safely
-        setAllNotifications(prevNotifications => {
-          // Safety check - ensure prevNotifications is an array
-          if (!Array.isArray(prevNotifications)) {
-            console.warn('Unexpected non-array value for allNotifications:', prevNotifications);
-            return [];
-          }
+        // Update local state
+        setAllNotifications((prevNotifications) =>
+          prevNotifications.map((prevNotification) =>
+            prevNotification.id === notification.id
+              ? { ...prevNotification, read_at: now }
+              : prevNotification
+          )
+        );
 
-          const updatedNotifications = prevNotifications.map(notification =>
-            notification.id === notification.id
-              ? { ...notification, read_at: now }
-              : notification
-          );
+        // Update unread count
+        const unreadCount = allNotifications.filter(notification => !notification.read_at).length - 1;
+        setNotifications(unreadCount);
 
-          // Calculate unread count from the updated array
-          const unreadCount = updatedNotifications.filter(notification => !notification.read_at).length;
-          setNotifications(unreadCount);
-
-          return updatedNotifications;
-        });
+        // Navigate to order details if applicable
         if (notification.data.order_id) {
           router.push(`/order/${notification.data.order_id}`);
         }
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('Error marking notification as read:', error);
       });
-  }, [user, setNotifications]);
+  }, [user, allNotifications, setNotifications]);
 
-  // Group notifications by date - memoized to prevent unnecessary recalculations
+  // Group notifications by date
   const groupedNotifications = useMemo(() => {
-    // Safety check to ensure allNotifications is an array
-    if (!Array.isArray(allNotifications)) {
-      console.warn('groupedNotifications received non-array:', allNotifications);
-      return {};
-    }
-
     const grouped = {};
-    allNotifications.forEach(notification => {
-      if (!notification?.created_at) return; // Skip invalid notifications
-
+    allNotifications.forEach((notification) => {
       const date = new Date(notification.created_at).toLocaleDateString();
       if (!grouped[date]) {
         grouped[date] = [];
@@ -127,41 +100,31 @@ export default function Notifications() {
   }, []);
 
   // Render a notification item
-  const renderNotificationItem = useCallback((notification) => {
-    // Safety check for valid notification object
-    if (!notification || !notification.id || !notification.data) {
-      console.warn('Invalid notification object:', notification);
-      return null;
-    }
-
-    return (
-      <TouchableOpacity
-        key={notification.id}
-        style={[
-          styles.notificationItem,
-          !notification.read_at && styles.newNotification,
-        ]}
-        onPress={() => markAsRead(notification)}
-      >
-        <Text style={styles.notificationText}>
-          {notification.data.message}
+  const renderNotificationItem = useCallback((notification) => (
+    <TouchableOpacity
+      key={notification.id}
+      style={[
+        styles.notificationItem,
+        !notification.read_at && styles.newNotification,
+      ]}
+      onPress={() => markAsRead(notification)}
+    >
+      <Text style={styles.notificationText}>
+        {notification.data.message}
+      </Text>
+      {notification.data.order_id && (
+        <Text style={styles.notificationOrderText}>
+          Order ID: #{notification.data.order_id}
         </Text>
-        {notification.data.order_id && (
-          <Text style={styles.notificationOrderText}>
-            Order ID: #{notification.data.order_id}
-          </Text>
-        )}
-        {!notification.read_at && (
-          <View style={styles.unreadIndicator} />
-        )}
-        <Text style={styles.timeText}>
-          {notification.created_at ?
-            new Date(notification.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
-            ''}
-        </Text>
-      </TouchableOpacity>
-    );
-  }, [markAsRead]);
+      )}
+      {!notification.read_at && (
+        <View style={styles.unreadIndicator} />
+      )}
+      <Text style={styles.timeText}>
+        {new Date(notification.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
+    </TouchableOpacity>
+  ), [markAsRead]);
 
   return (
     <View style={styles.container}>
@@ -178,20 +141,17 @@ export default function Notifications() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2C3639" />
         </View>
-      ) : !Array.isArray(allNotifications) || allNotifications.length === 0 ? (
+      ) : allNotifications.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="notifications-off-outline" size={48} color="#ccc" />
           <Text style={styles.emptyText}>No notifications yet</Text>
         </View>
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Render grouped notifications */}
-          {Object.keys(groupedNotifications).map(date => (
+          {Object.keys(groupedNotifications).map((date) => (
             <View style={styles.section} key={date}>
               <Text style={styles.sectionTitle}>{date}</Text>
-              {Array.isArray(groupedNotifications[date]) ?
-                groupedNotifications[date].map(renderNotificationItem) :
-                <Text style={styles.errorText}>Error loading notifications</Text>}
+              {groupedNotifications[date].map(renderNotificationItem)}
             </View>
           ))}
         </ScrollView>
@@ -297,11 +257,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     textAlign: 'center',
-  },
-  errorText: {
-    padding: 16,
-    fontSize: 14,
-    color: '#FF6B6B',
-    fontStyle: 'italic',
   },
 });

@@ -5,8 +5,6 @@ import { useState, useEffect } from 'react';
 import useStore from '@/app/store/useStore';
 import { apiService } from '@/app/services/apiService';
 import * as SecureStore from 'expo-secure-store';
-import { ref, onValue, off } from 'firebase/database';
-import { database } from '@/firebaseConfig';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -41,22 +39,6 @@ export default function Login() {
       });
       setBasket(response.cart_count);
       setWishlist(response.wishlists_count);
-
-      // Fetch notifications data
-      const notificationsReference = ref(database, `notifications/user_${response.user.id}`);
-      onValue(notificationsReference, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const notifications = Object.keys(data)
-            .map((key) => ({
-              id: key,
-              ...data[key],
-            }))
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-          const unreadCount = notifications.filter(notification => !notification.read_at).length;
-          setNotifications(unreadCount);
-        }
-      });
 
       // Now navigate to the main app
       router.replace('/(tabs)');
