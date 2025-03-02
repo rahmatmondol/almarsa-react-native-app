@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Dimensions, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Modal, Alert, FlatList } from 'react-native';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
@@ -7,24 +7,57 @@ import ImageViewer from 'react-native-image-zoom-viewer';
 import RenderHtml from 'react-native-render-html';
 import useStore from '@/app/store/useStore';
 import Header from '@/app/components/Header';
+import { useWindowDimensions } from 'react-native';
 
-const { width } = Dimensions.get('window');
+interface Product {
+    id: string;
+    name: string;
+    price: {
+        formatted: {
+            price: string;
+            discountedPrice: string;
+        };
+    };
+    discount: {
+        value: number;
+    };
+    description: string;
+    media: {
+        items: Array<{
+            image: {
+                url: string;
+            };
+        }>;
+    };
+    productOptions: Array<{
+        id: string;
+        name: string;
+        choices: Array<{
+            description: string;
+        }>;
+    }>;
+    additionalInfoSections: Array<{
+        title: string;
+        description: string;
+    }>;
+}
 
 export default function ProductPage() {
     const { id } = useLocalSearchParams();
     const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
-    const [product, setProduct] = useState<any>(null);
+    const [product, setProduct] = useState<Product | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isVariationModalVisible, setIsVariationModalVisible] = useState(false);
-    const [selectedVariation, setSelectedVariation] = useState(null);
+    const [selectedVariation, setSelectedVariation] = useState<any>(null);
     const { isAuthenticated, setBasket, setWishlist } = useStore();
     const [addingToCart, setAddingToCart] = useState(false);
     const [addingToWishlist, setAddingToWishlist] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const { width } = useWindowDimensions();
 
     const getData = useCallback(async () => {
         try {
@@ -44,7 +77,6 @@ export default function ProductPage() {
         }
     }, [id]);
 
-    // Use useFocusEffect to reload data when the screen comes into focus
     useFocusEffect(
         useCallback(() => {
             getData();
@@ -55,7 +87,6 @@ export default function ProductPage() {
     );
 
     const handleBack = () => router.back();
-    const handleClose = () => router.back();
 
     const decrementQuantity = () => {
         if (quantity > 1) setQuantity(quantity - 1);
@@ -190,34 +221,30 @@ export default function ProductPage() {
         );
     }
 
-    // Prepare image URLs for the image viewer
-    const imageUrls = product.media.items.map((item: any) => ({ url: item.image.url }));
+    const imageUrls = product.media.items.map((item) => ({ url: item.image.url }));
 
     return (
         <View style={styles.container}>
-            {/* Header */}
             <Header title="Order Details" onBack={handleBack} />
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Product Image Slider */}
-                <ScrollView
+                <FlatList
                     horizontal
                     pagingEnabled
                     showsHorizontalScrollIndicator={false}
-                    style={styles.sliderContainer}
-                >
-                    {product.media.items.map((item: any, index: number) => (
-                        <TouchableOpacity key={index} onPress={() => openImageModal(index)}>
+                    data={product.media.items}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={({ item, index }) => (
+                        <TouchableOpacity onPress={() => openImageModal(index)}>
                             <Image
                                 source={{ uri: item.image.url }}
                                 style={[styles.productImage, { width }]}
                                 defaultSource={require('@/assets/images/icon.png')}
                             />
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                    )}
+                />
 
-                {/* Product Info */}
                 <View style={styles.productInfo}>
                     <Text style={styles.title}>{product.name}</Text>
                     <View style={styles.priceContainer}>
@@ -231,7 +258,6 @@ export default function ProductPage() {
                         )}
                     </View>
 
-                    {/* Quantity Selector */}
                     <View style={styles.quantitySelector}>
                         <TouchableOpacity onPress={decrementQuantity} style={styles.quantityButton}>
                             <Text style={styles.quantityButtonText}>−</Text>
@@ -242,37 +268,39 @@ export default function ProductPage() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Product Description */}
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>DESCRIPTION</Text>
                         <RenderHtml
-                            contentWidth={width - 32} // Account for padding
+                            contentWidth={width - 32}
                             source={{ html: product.description || '<p>No description available</p>' }}
                         />
                     </View>
 
-                    {/* Variations */}
                     {product.productOptions?.length > 0 && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>VARIATIONS</Text>
-                            {product.productOptions.map((option: any, index: number) => (
-                                <View key={index} style={styles.variation}>
-                                    <Text style={styles.variationText}>{option.name}</Text>
-                                    {option.choices?.map((choice: any, idx: number) => (
-                                        <Text key={idx} style={styles.choiceText}>
-                                            {choice.description}
-                                        </Text>
-                                    ))}
-                                </View>
-                            ))}
+                            <FlatList
+                                data={product.productOptions}
+                                keyExtractor={(item, index) => index.toString()}
+                                renderItem={({ item }) => (
+                                    <View style={styles.variation}>
+                                        <Text style={styles.variationText}>{item.name}</Text>
+                                        {item.choices?.map((choice, idx) => (
+                                            <Text key={idx} style={styles.choiceText}>
+                                                {choice.description}
+                                            </Text>
+                                        ))}
+                                    </View>
+                                )}
+                            />
                         </View>
                     )}
 
-                    {/* Additional Info */}
-                    {product.additionalInfoSections?.map((section: any, index: number) => (
+                    {product.additionalInfoSections?.map((section, index) => (
                         <View key={index} style={styles.section}>
                             <Text style={styles.sectionTitle}>{section.title}</Text>
                             <RenderHtml
+                                contentWidth={width - 32}
                                 source={{ html: section.description || '<p>No information available</p>' }}
                             />
                         </View>
@@ -280,7 +308,6 @@ export default function ProductPage() {
                 </View>
             </ScrollView>
 
-            {/* Action Buttons */}
             <View style={styles.actionButtons}>
                 <TouchableOpacity
                     style={[styles.wishlistButton, addingToWishlist && styles.buttonDisabled]}
@@ -312,12 +339,7 @@ export default function ProductPage() {
                 </TouchableOpacity>
             </View>
 
-            {/* Success Modal */}
-            <Modal
-                visible={showSuccessModal}
-                transparent={true}
-                animationType="fade"
-            >
+            <Modal visible={showSuccessModal} transparent={true} animationType="fade">
                 <View style={styles.successModalContainer}>
                     <View style={styles.successModalContent}>
                         <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
@@ -335,13 +357,8 @@ export default function ProductPage() {
                 </View>
             </Modal>
 
-            {/* Full-Size Image Modal */}
             {isModalVisible && (
-                <Modal
-                    visible={true}
-                    transparent={true}
-                    onRequestClose={closeImageModal}
-                >
+                <Modal visible={true} transparent={true} onRequestClose={closeImageModal}>
                     <View style={styles.imageViewerContainer}>
                         <ImageViewer
                             imageUrls={imageUrls}
@@ -360,20 +377,22 @@ export default function ProductPage() {
                 </Modal>
             )}
 
-            {/* Variation Selection Modal */}
             <Modal visible={isVariationModalVisible} transparent={true} animationType="slide">
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Select Variation</Text>
-                        {product.productOptions?.map((option: any, index: number) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={styles.variationOption}
-                                onPress={() => handleVariationSelection(option)}
-                            >
-                                <Text style={styles.variationOptionText}>{option.name}</Text>
-                            </TouchableOpacity>
-                        ))}
+                        <FlatList
+                            data={product.productOptions}
+                            keyExtractor={(item, index) => index.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.variationOption}
+                                    onPress={() => handleVariationSelection(item)}
+                                >
+                                    <Text style={styles.variationOptionText}>{item.name}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
                         <TouchableOpacity onPress={closeVariationModal} style={styles.closeModalButton}>
                             <Text style={styles.closeModalButtonText}>Close</Text>
                         </TouchableOpacity>
@@ -383,6 +402,7 @@ export default function ProductPage() {
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
