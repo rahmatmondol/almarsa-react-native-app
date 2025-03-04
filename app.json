@@ -19,7 +19,7 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#2C3639"
       },
-      "package": "com.anonymous.almarsaapp",
+      "package": "com.almarsa.app",
       "runtimeVersion": "1.0.0"
     },
     "web": {

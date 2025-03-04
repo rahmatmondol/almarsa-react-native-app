@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
 import Header from '@/app/components/Header';
@@ -31,7 +31,7 @@ export default function OrderDetails() {
   };
 
   const handleBack = () => {
-    router.back();
+    router.push('/orders');
   };
 
   const formatAddressDetails = (address) => {
@@ -97,14 +97,14 @@ export default function OrderDetails() {
 
   return (
     <View style={styles.container}>
-      <Header title="Order Details" onBack={handleBack} />
+      {/* <Header title="Order Details" onBack={handleBack} /> */}
       {/* Header */}
-      {/* <View style={styles.header}>
+      <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color="#2C3639" />
           <Text style={styles.headerTitle}>Order Details</Text>
         </TouchableOpacity>
-      </View> */}
+      </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Order Status */}
