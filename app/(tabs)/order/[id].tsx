@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
 import Header from '@/app/components/Header';
@@ -10,9 +10,11 @@ export default function OrderDetails() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadOrderDetails();
-  }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      loadOrderDetails();
+    }, [])
+  );
 
   const loadOrderDetails = async () => {
     try {

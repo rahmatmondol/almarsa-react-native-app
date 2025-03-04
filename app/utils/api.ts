@@ -3,7 +3,8 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } f
 import * as SecureStore from 'expo-secure-store';
 
 // Define the base URL using an environment variable
-const baseURL = process.env.EXPO_PUBLIC_API_URL;
+// const baseURL = process.env.EXPO_PUBLIC_API_URL;
+const baseURL = 'https://app.almarsa-gourmet.com/api/v1/';
 
 // Create an Axios instance
 const api: AxiosInstance = axios.create({

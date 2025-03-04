@@ -9,14 +9,18 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#2C3639"
       },
-      "package": "com.anonymous.almarsaapp"
+      "package": "com.anonymous.almarsaapp",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "bundler": "metro",
@@ -47,6 +51,9 @@
         "projectId": "1fef7020-6cb2-47b2-a35f-494950f775ed"
       }
     },
-    "owner": "rahmatmondol007"
+    "owner": "rahmatmondol007",
+    "updates": {
+      "url": "https://u.expo.dev/1fef7020-6cb2-47b2-a35f-494950f775ed"
+    }
   }
 }
