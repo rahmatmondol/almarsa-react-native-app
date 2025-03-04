@@ -84,11 +84,4 @@ export const apiService = {
     deleteAddress: (id: number) => api.delete(`/auth/delete-address/${id}`),
 
     updatePushToken: (data: any) => api.post('/auth/update-push-token', data),
-
-
-    //get about us
-    getAbout: () => api.get('/about'),
-
-    //get contact
-    getContact: () => api.get('/contact'),
 };

@@ -101,7 +101,7 @@ export default function Search() {
         ) : (
           <>
             {/* Search Suggestions */}
-            <View style={styles.section}>
+            {/* <View style={styles.section}>
               <Text style={styles.sectionTitle}>Popular Categories</Text>
               <View style={styles.categoriesGrid}>
                 {['Vegetables', 'Fruits', 'Meat', 'Fish', 'Dairy', 'Bakery'].map((category) => (
@@ -114,7 +114,7 @@ export default function Search() {
                   </TouchableOpacity>
                 ))}
               </View>
-            </View>
+            </View> */}
           </>
         )}
       </ScrollView>

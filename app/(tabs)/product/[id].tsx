@@ -389,7 +389,8 @@ export default function ProductPage() {
                                     style={styles.variationOption}
                                     onPress={() => handleVariationSelection(item)}
                                 >
-                                    <Text style={styles.variationOptionText}>{item.name}</Text>
+                                    <Text style={styles.variationOptionText}>{item.choices[0].description}</Text>
+                                    {console.log(item)}
                                 </TouchableOpacity>
                             )}
                         />
