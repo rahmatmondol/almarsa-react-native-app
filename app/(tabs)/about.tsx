@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, Image, ScrollView, Linking } from 'react-native';
-import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '@/app/components/Header';
 import Banner from '@/app/components/Banner';
@@ -7,22 +6,22 @@ import Banner from '@/app/components/Banner';
 const STEPS = [
   {
     title: 'Add products to the basket',
-    icon: 'basket-outline',
+    icon: require('@/assets/images/basket-icon.png'),
   },
   {
     title: 'Validate your order',
     subtitle: 'Choose between self-pickup or home delivery in Muscat and Sohar',
-    icon: 'checkmark-circle-outline',
+    icon: require('@/assets/images/check-icon.png'),
   },
   {
     title: 'A confirmation message will be sent on the day of the delivery',
     subtitle: 'We will share the time for your delivery/pick-up',
-    icon: 'chatbubble-outline',
+    icon: require('@/assets/images/chat-icon.png'),
   },
   {
     title: 'We accept both, credit cards and cash upon delivery/pick-up',
     subtitle: 'We deliver on Sunday, Monday, Tuesday, Wednesday and Thursday from 2:00 pm to 7:00 pm.',
-    icon: 'card-outline',
+    icon: require('@/assets/images/payment-icon.png'),
   },
 ];
 
@@ -31,28 +30,43 @@ export default function Home() {
     <>
       <Header title='about' />
       <ScrollView style={styles.container}>
-        <Banner />
+        <View style={styles.heroSection}>
+          <Image
+            source={require('@/assets/images/default-banner.png')}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+          <View style={styles.heroOverlay} />
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={styles.heroIcon}
+          />
+          <Image
+            source={require('@/assets/images/main-logo.png')}
+            style={styles.heroLogo}
+          />
+        </View>
 
         <View style={styles.websiteContainer}>
-          <Text style={styles.website}>www.almarsa-gourmet.com</Text>
+          <Text style={styles.website} onPress={() => Linking.openURL('https://almarsa-gourmet.com')}>www.almarsa-gourmet.com</Text>
         </View>
 
         <View style={styles.socialLinks}>
           <Ionicons
             name="logo-instagram"
-            size={24}
+            size={35}
             color="#333"
-            onPress={() => Linking.openURL('https://instagram.com')}
+            onPress={() => Linking.openURL('https://www.instagram.com/almarsa_gourmet/')}
           />
           <Ionicons
             name="logo-facebook"
-            size={24}
+            size={35}
             color="#333"
-            onPress={() => Linking.openURL('https://facebook.com')}
+            onPress={() => Linking.openURL('https://www.facebook.com/almarsagourmet')}
           />
           <Ionicons
             name="mail"
-            size={24}
+            size={35}
             color="#333"
             onPress={() => Linking.openURL('mailto:info@almarsa-gourmet.com')}
           />
@@ -65,10 +79,11 @@ export default function Home() {
           <View style={styles.steps}>
             {STEPS.map((step, index) => (
               <View key={index} style={styles.step}>
-                <View style={styles.stepIconContainer}>
-                  <Ionicons name={step.icon} size={32} color="#fff" />
-                </View>
                 <Text style={styles.stepTitle}>{step.title}</Text>
+                <Image
+                  source={step.icon}
+                  style={styles.stepIcon}
+                />
                 {step.subtitle && (
                   <Text style={styles.stepSubtitle}>{step.subtitle}</Text>
                 )}
@@ -99,6 +114,53 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  heroSection: {
+    height: 200,
+    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2C3639',
+    flexDirection: 'column',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    position: 'absolute',
+    objectFit: 'cover',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  heroIcon: {
+    width: 100,
+    height: 80,
+    objectFit: 'contain',
+    position: 'absolute',
+    top: 20,
+  },
+  heroText: {
+    position: 'absolute',
+    width: '100%',
+    textAlign: 'center',
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    top: 30,
+  },
+  heroTextAccent: {
+    color: '#fff',
+  },
+  heroLogo: {
+    position: 'absolute',
+    width: '60%',
+    height: 60,
+    alignSelf: 'center',
+    bottom: 30,
+  },
   header: {
     height: 200,
     position: 'relative',
@@ -120,7 +182,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   website: {
-    fontSize: 16,
+    fontSize: 22,
     color: '#333',
   },
   socialLinks: {
@@ -167,7 +229,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 5,
+  },
+  stepIcon: {
+    width: 60,
+    height: 50,
+    objectFit: 'contain',
+    marginTop: 15,
+    marginBottom: 15,
   },
   stepSubtitle: {
     color: '#fff',

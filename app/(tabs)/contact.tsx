@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import Header from '@/app/components/Header';
@@ -19,8 +19,27 @@ export default function Contact() {
       {/* Header */}
       <Header title={'contact'} />
 
+      {/* Banner */}
+
+      <View style={styles.heroSection}>
+        <Image
+          source={require('@/assets/images/default-banner.png')}
+          style={styles.heroImage}
+          resizeMode="cover"
+        />
+        <View style={styles.heroOverlay} />
+        <Image
+          source={require('@/assets/images/icon.png')}
+          style={styles.heroIcon}
+        />
+        <Image
+          source={require('@/assets/images/main-logo.png')}
+          style={styles.heroLogo}
+        />
+
+      </View>
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Banner />
 
         {/* Welcome Message */}
         <View style={styles.welcomeSection}>
@@ -33,15 +52,15 @@ export default function Contact() {
 
         {/* Contact Methods */}
         <View style={styles.contactMethods}>
-          <TouchableOpacity style={styles.contactMethod}>
+          <TouchableOpacity style={styles.contactMethod} onPress={() => Linking.openURL(`tel:+96896937750`)}>
             <View style={styles.contactMethodIcon}>
               <Ionicons name="call-outline" size={24} color="#E97777" />
             </View>
             <Text style={styles.contactMethodTitle}>Call Us</Text>
-            <Text style={styles.contactMethodValue}>+968 96937750</Text>
+            <Text style={styles.contactMethodValue} >+968 96937750</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.contactMethod}>
+          <TouchableOpacity style={styles.contactMethod} onPress={() => Linking.openURL(`mailto:info@almarsa-gourmet.com`)}>
             <View style={styles.contactMethodIcon}>
               <Ionicons name="mail-outline" size={24} color="#E97777" />
             </View>
@@ -51,7 +70,7 @@ export default function Contact() {
         </View>
 
         {/* Contact Form */}
-        <View style={styles.form}>
+        {/* <View style={styles.form}>
           <Text style={styles.formTitle}>Send us a message</Text>
 
           <TextInput
@@ -83,10 +102,10 @@ export default function Contact() {
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
             <Text style={styles.submitButtonText}>SEND MESSAGE</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Social Links */}
-        <View style={styles.socialLinks}>
+        {/* <View style={styles.socialLinks}>
           <Text style={styles.socialTitle}>Follow Us</Text>
           <View style={styles.socialButtons}>
             <TouchableOpacity style={styles.socialButton}>
@@ -99,13 +118,57 @@ export default function Contact() {
               <Ionicons name="logo-twitter" size={24} color="#E97777" />
             </TouchableOpacity>
           </View>
-        </View>
+        </View> */}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  heroSection: {
+    height: 200,
+    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2C3639',
+    flexDirection: 'column',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  heroIcon: {
+    width: 100,
+    height: 80,
+    position: 'absolute',
+    objectFit: 'contain',
+    top: 20,
+  },
+  heroText: {
+    position: 'absolute',
+    width: '100%',
+    textAlign: 'center',
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    top: 30,
+  },
+  heroTextAccent: {
+    color: '#fff',
+  },
+  heroLogo: {
+    position: 'absolute',
+    width: '60%',
+    height: 60,
+    alignSelf: 'center',
+    bottom: 30,
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
