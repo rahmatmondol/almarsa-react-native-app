@@ -1,47 +1,35 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { Link, router } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Modal } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
-import useStore from '@/app/store/useStore';
+import { useState } from 'react';
 import { apiService } from '@/app/services/apiService';
 import * as SecureStore from 'expo-secure-store';
 
-export default function Login() {
-  const [showPassword, setShowPassword] = useState(false);
+export default function ChangePassword() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { setUser, setBasket, setWishlist, setNotifications } = useStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [success, setSuccess] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      alert('Please enter a valid email and password');
+    if (!email.trim()) {
+      alert('Please enter a valid email');
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.login({ email, password });
-
-      // Store user data securely
-      await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
-      await SecureStore.setItemAsync('authToken', response.token);
-      await SecureStore.setItemAsync('wishlist', response.wishlists_count.toString());
-      await SecureStore.setItemAsync('basket', response.cart_count.toString());
-
-      // Update global state
-      setUser({
-        token: response.token,
-        data: response.user,
-      });
-      setBasket(response.cart_count);
-      setWishlist(response.wishlists_count);
-
+      const response = await apiService.forgotPassword({ email });
+      if (response.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+          SecureStore.setItemAsync('resetEmail', email);
+          router.replace('/reset-password');
+        }, 3000);
+      }
       // Now navigate to the main app
-      router.replace('/(tabs)');
     } catch (error) {
       setError(error.message || "Login failed");
       console.log(error);
@@ -62,7 +50,7 @@ export default function Login() {
 
       <View style={styles.content}>
         <Text style={styles.welcomeText}>
-          Welcome back, glad to see{'\n'}you, Again!
+          Enter your email address to receive 6-digit code
         </Text>
 
         {error !== null && (
@@ -82,30 +70,6 @@ export default function Login() {
             autoCapitalize="none"
           />
 
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Enter your password"
-              placeholderTextColor="#999"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}>
-              <Ionicons
-                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={24}
-                color="#999"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity onPress={() => router.push('/forget-password')}>
-            <Text style={styles.forgotPassword}>Forgot your password?</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
             onPress={handleLogin}
@@ -114,30 +78,26 @@ export default function Login() {
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>LOGIN</Text>
+              <Text style={styles.loginButtonText}>SUBMIT</Text>
             )}
           </TouchableOpacity>
 
-          <Text style={styles.orText}>Or login with</Text>
 
-          <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Ionicons name="logo-facebook" size={24} color="#E97777" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <Ionicons name="logo-google" size={24} color="#E97777" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Don't have an account? </Text>
-            <Link href="/register" asChild>
-              <TouchableOpacity>
-                <Text style={styles.registerLink}>Register now</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
         </View>
+
+        <Modal visible={success} transparent={true}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Ionicons
+                name="checkmark-circle"
+                size={40}
+                color="#1abc9c"
+                style={styles.modalIcon}
+              />
+              <Text style={styles.modalText}>Password reset code sent successfully to your email check your inbox</Text>
+            </View>
+          </View>
+        </Modal>
       </View>
     </View>
   );
@@ -146,6 +106,7 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
     backgroundColor: '#2C3639',
   },
   backButton: {
@@ -251,5 +212,26 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#E97777',
     fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#2C3639',
+    padding: 24,
+    borderRadius: 8,
+  },
+  modalText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  modalIcon: {
+    alignSelf: 'center',
   },
 });

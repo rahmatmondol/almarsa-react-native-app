@@ -56,12 +56,12 @@ export default function Settings() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Account Settings */}
         <View style={styles.section}>
-          <Link href="/change-email" asChild>
+          {/* <Link href="/change-email" asChild>
             <TouchableOpacity style={styles.menuItem}>
               <Text style={styles.menuItemText}>Change email</Text>
               <Ionicons name="chevron-forward" size={24} color="#666" />
             </TouchableOpacity>
-          </Link>
+          </Link> */}
 
           <Link href="/change-password" asChild>
             <TouchableOpacity style={styles.menuItem}>
