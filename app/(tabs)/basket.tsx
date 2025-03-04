@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, router, useFocusEffect } from 'expo-router';
 import Header from '@/app/components/Header';
 import { apiService } from '@/app/services/apiService';
@@ -16,7 +16,7 @@ export default function Basket() {
   const { setBasket, isAuthenticated } = useStore();
 
   if (!isAuthenticated) {
-    router.replace('/auth');
+    router.push('/auth');
     return;
   }
 

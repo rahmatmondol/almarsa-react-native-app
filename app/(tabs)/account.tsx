@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import Header from '@/app/components/Header';
 import * as SecureStore from 'expo-secure-store';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import useStore from '@/app/store/useStore';
 
 export default function Account() {
@@ -11,7 +11,7 @@ export default function Account() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace('/auth');
+      router.push('/auth');
     }
   }, [isAuthenticated]);
 
@@ -29,12 +29,12 @@ export default function Account() {
       logout();
 
       // Navigate to auth
-      router.replace('/auth');
+      router.push('/auth');
     } catch (error) {
       console.error('Logout error:', error);
       // Still logout even if there's an error clearing storage
       logout();
-      router.replace('/auth');
+      router.push('/auth');
     }
   };
 
