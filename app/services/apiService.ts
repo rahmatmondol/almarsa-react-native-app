@@ -1,3 +1,5 @@
+import ChangeEmail from '../(tabs)/change-email';
+import ChangePassword from '../(tabs)/change-password';
 import api from '../utils/api';
 import * as SecureStore from 'expo-secure-store';
 // is authenticated
@@ -32,6 +34,11 @@ export const apiService = {
     login: (data: any) => api.post('/login', data),
     register: (data: any) => api.post('/register', data),
     updateProfile: (data: any) => api.post('/auth/update-profile', data),
+    ChangePassword: (data: any) => api.post('/auth/change-password', data),
+    forgotPassword: (data: any) => api.post('/forgot-password', data),
+    resetPassword: (data: any) => api.post('/reset-password', data),
+    logout: () => api.post('/auth/logout'),
+    ChangeEmail: (data: any) => api.post('/auth/change-email', data),
 
     // add to cart
     addToCart: (data: any) => api.post('/auth/cart', data),
