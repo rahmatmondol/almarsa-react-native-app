@@ -4,7 +4,7 @@ import { Link, router } from 'expo-router';
 export default function Auth() {
   const handleGuestLogin = () => {
     // Handle guest login logic here
-    router.replace('/(tabs)');
+    router.push('/(tabs)');
   };
 
   return (

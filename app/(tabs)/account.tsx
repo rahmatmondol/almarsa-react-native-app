@@ -31,7 +31,7 @@ export default function Account() {
       // Navigate to auth
       router.push('/auth');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.log('Logout error:', error);
       // Still logout even if there's an error clearing storage
       logout();
       router.push('/auth');

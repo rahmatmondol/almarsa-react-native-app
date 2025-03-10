@@ -4,7 +4,7 @@ import useStore from '@/app/store/useStore';
 import { useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { ref, onValue, off } from 'firebase/database';
-import { database } from '@/firebaseConfig';
+import { database } from '../../firebaseConfig';
 
 export default function TabLayout() {
   const { isAuthenticated, user, setUser, setBasket, setWishlist, basket, setNotifications } = useStore();

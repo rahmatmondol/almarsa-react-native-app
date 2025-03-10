@@ -1,23 +1,42 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useStore from '@/app/store/useStore';
 import { apiService } from '@/app/services/apiService';
 import * as SecureStore from 'expo-secure-store';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
+WebBrowser.maybeCompleteAuthSession();
+
+// Constants for SecureStore keys
+const USER_DATA_KEY = 'userData';
+const AUTH_TOKEN_KEY = 'authToken';
+const WISHLIST_KEY = 'wishlist';
+const BASKET_KEY = 'basket';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { setUser, setBasket, setWishlist, setNotifications } = useStore();
+  const { setUser, setBasket, setWishlist } = useStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    androidClientId: '208983196244-ct9ka44e5tli2aroh4kherpb94cqi37s.apps.googleusercontent.com',
+    webClientId: '208983196244-s63qnp1i36mccagvm54b9b8h2t6t2cda.apps.googleusercontent.com', 
+    redirectUri: 'http://localhost:8081',
+  });
+
+
+  // Function to handle Google login
 
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      alert('Please enter a valid email and password');
+      setError('Please enter a valid email and password');
       return;
     }
 
@@ -27,10 +46,10 @@ export default function Login() {
       const response = await apiService.login({ email, password });
 
       // Store user data securely
-      await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
-      await SecureStore.setItemAsync('authToken', response.token);
-      await SecureStore.setItemAsync('wishlist', response.wishlists_count.toString());
-      await SecureStore.setItemAsync('basket', response.cart_count.toString());
+      await SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(response.user));
+      await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
+      await SecureStore.setItemAsync(WISHLIST_KEY, response.wishlists_count.toString());
+      await SecureStore.setItemAsync(BASKET_KEY, response.cart_count.toString());
 
       // Update global state
       setUser({
@@ -40,11 +59,10 @@ export default function Login() {
       setBasket(response.cart_count);
       setWishlist(response.wishlists_count);
 
-      // Now navigate to the main app
-      router.replace('/(tabs)');
+      // Navigate to the main app
+      router.push('/(tabs)');
     } catch (error) {
-      setError(error.message || "Login failed");
-      console.log(error);
+      setError(error.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -52,6 +70,45 @@ export default function Login() {
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await promptAsync();
+
+      if (result.type === 'success') {
+        const { idToken } = result.params;
+
+        // Handle Google login with idToken
+        // const response = await apiService.googleLogin({ idToken });
+
+        // // Store user data securely
+        // await SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(response.user));
+        // await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
+        // await SecureStore.setItemAsync(WISHLIST_KEY, response.wishlists_count.toString());
+        // await SecureStore.setItemAsync(BASKET_KEY, response.cart_count.toString());
+
+        // // Update global state
+        // setUser({
+        //   token: response.token,
+        //   data: response.user,
+        // });
+        // setBasket(response.cart_count);
+        // setWishlist(response.wishlists_count);
+
+        // // Navigate to the main app
+        // router.push('/(tabs)');
+        console.log(result);
+      } else {
+        setError("Google login failed. Please try again.");
+      }
+    } catch (error) {
+      setError(error.message || "Google login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,7 +122,7 @@ export default function Login() {
           Welcome back, glad to see{'\n'}you, Again!
         </Text>
 
-        {error !== null && (
+        {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
@@ -93,7 +150,8 @@ export default function Login() {
             />
             <TouchableOpacity
               style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}>
+              onPress={() => setShowPassword(!showPassword)}
+            >
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                 size={24}
@@ -121,10 +179,7 @@ export default function Login() {
           <Text style={styles.orText}>Or login with</Text>
 
           <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Ionicons name="logo-facebook" size={24} color="#E97777" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
+            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin}>
               <Ionicons name="logo-google" size={24} color="#E97777" />
             </TouchableOpacity>
           </View>
