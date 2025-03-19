@@ -28,6 +28,8 @@ export default function DrawerMenu({ onClose }: { onClose: () => void }) {
 
   const handleCategoryPress = (categoryId: number) => {
     if (expandedCategory === categoryId) {
+      router.push(`/category/${categoryId}`);
+      onClose();
       setExpandedCategory(null);
       setExpandedSubcategory(null);
     } else {
@@ -38,6 +40,8 @@ export default function DrawerMenu({ onClose }: { onClose: () => void }) {
 
   const handleSubcategoryPress = (subcategoryId: number) => {
     if (expandedSubcategory === subcategoryId) {
+      router.push(`/category/${subcategoryId}`);
+      onClose();
       setExpandedSubcategory(null);
     } else {
       setExpandedSubcategory(subcategoryId);
