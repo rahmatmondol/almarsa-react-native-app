@@ -27,6 +27,7 @@ export default function Login() {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     androidClientId: '208983196244-ct9ka44e5tli2aroh4kherpb94cqi37s.apps.googleusercontent.com',
     webClientId: '208983196244-s63qnp1i36mccagvm54b9b8h2t6t2cda.apps.googleusercontent.com', 
+    redirectUri: 'http://localhost:8081',
   });
 
 

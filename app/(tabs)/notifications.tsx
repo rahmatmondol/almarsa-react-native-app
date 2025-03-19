@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ref, onValue, update, off } from 'firebase/database';
-import { database } from '@/firebaseConfig';
+import { database } from '../../firebaseConfig';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import useStore from '../store/useStore';
 
