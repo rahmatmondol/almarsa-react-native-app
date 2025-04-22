@@ -1,48 +1,92 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Dimensions, Modal, Alert } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Modal, Alert, FlatList } from 'react-native';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import RenderHtml from 'react-native-render-html';
 import useStore from '@/app/store/useStore';
+import Header from '@/app/components/Header';
+import { useWindowDimensions } from 'react-native';
 
-const { width } = Dimensions.get('window');
+interface Product {
+    id: string;
+    name: string;
+    price: {
+        formatted: {
+            price: string;
+            discountedPrice: string;
+        };
+    };
+    discount: {
+        value: number;
+    };
+    description: string;
+    media: {
+        items: Array<{
+            image: {
+                url: string;
+            };
+        }>;
+    };
+    productOptions: Array<{
+        id: string;
+        name: string;
+        choices: Array<{
+            description: string;
+        }>;
+    }>;
+    additionalInfoSections: Array<{
+        title: string;
+        description: string;
+    }>;
+}
 
 export default function ProductPage() {
     const { id } = useLocalSearchParams();
     const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
-    const [product, setProduct] = useState<any>(null);
+    const [product, setProduct] = useState<Product | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isVariationModalVisible, setIsVariationModalVisible] = useState(false);
-    const [selectedVariation, setSelectedVariation] = useState(null);
+    const [selectedVariation, setSelectedVariation] = useState<any>(null);
     const { isAuthenticated, setBasket, setWishlist } = useStore();
     const [addingToCart, setAddingToCart] = useState(false);
     const [addingToWishlist, setAddingToWishlist] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const { width } = useWindowDimensions();
 
-    const getData = async () => {
+    const getData = useCallback(async () => {
         try {
             setLoading(true);
+            setError(null);
             const res = await apiService.getProduct(id);
-            setProduct(res.product);
+            if (res.success) {
+                setProduct(res.product);
+            } else {
+                setError('Failed to load product details');
+            }
         } catch (error) {
-            // console.error('Error fetching product:', error);
-            // Alert.alert('Error', 'Failed to load product details');
+            console.error('Error fetching product:', error);
+            setError('Failed to load product details. Please try again.');
         } finally {
             setLoading(false);
         }
-    };
-
-    useEffect(() => {
-        getData();
     }, [id]);
 
+    useFocusEffect(
+        useCallback(() => {
+            getData();
+            return () => {
+                // Optional cleanup
+            };
+        }, [getData])
+    );
+
     const handleBack = () => router.back();
-    const handleClose = () => router.back();
 
     const decrementQuantity = () => {
         if (quantity > 1) setQuantity(quantity - 1);
@@ -102,8 +146,11 @@ export default function ProductPage() {
                 setSuccessMessage('Product added to wishlist successfully!');
                 setShowSuccessModal(true);
                 setTimeout(() => setShowSuccessModal(false), 2000);
+            } else {
+                Alert.alert('Error', res.message || 'Failed to add product to wishlist');
             }
         } catch (error) {
+            console.error('Error adding to wishlist:', error);
             Alert.alert('Error', 'Failed to add product to wishlist');
         } finally {
             setAddingToWishlist(false);
@@ -138,9 +185,16 @@ export default function ProductPage() {
                 setBasket(res.product.items.length);
                 setSuccessMessage('Product added to cart successfully!');
                 setShowSuccessModal(true);
-                setTimeout(() => setShowSuccessModal(false), 2000);
+                setTimeout(() => {
+                    setShowSuccessModal(false);
+                    // Optionally navigate to basket
+                    // router.push('/basket');
+                }, 2000);
+            } else {
+                Alert.alert('Error', res.message || 'Failed to add product to cart');
             }
         } catch (error) {
+            console.error('Error adding to cart:', error);
             Alert.alert('Error', 'Failed to add product to cart');
         } finally {
             setAddingToCart(false);
@@ -155,10 +209,11 @@ export default function ProductPage() {
         );
     }
 
-    if (!product) {
+    if (error || !product) {
         return (
             <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>Product not found</Text>
+                <Ionicons name="alert-circle-outline" size={64} color="#E97777" />
+                <Text style={styles.errorText}>{error || 'Product not found'}</Text>
                 <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                     <Text style={styles.backButtonText}>Go Back</Text>
                 </TouchableOpacity>
@@ -166,51 +221,43 @@ export default function ProductPage() {
         );
     }
 
+    const imageUrls = product.media.items.map((item) => ({ url: item.image.url }));
+
     return (
         <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleBack}>
-                    <Ionicons name="chevron-back" size={24} color="#2C3639" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleClose}>
-                    <Ionicons name="close" size={24} color="#2C3639" />
-                </TouchableOpacity>
-            </View>
+            <Header title="Order Details" onBack={handleBack} />
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Product Image Slider */}
-                <ScrollView
+                <FlatList
                     horizontal
                     pagingEnabled
                     showsHorizontalScrollIndicator={false}
-                    style={styles.sliderContainer}
-                >
-                    {product.media.items.map((item: any, index: number) => (
-                        <TouchableOpacity key={index} onPress={() => openImageModal(index)}>
+                    data={product.media.items}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={({ item, index }) => (
+                        <TouchableOpacity onPress={() => openImageModal(index)}>
                             <Image
                                 source={{ uri: item.image.url }}
                                 style={[styles.productImage, { width }]}
+                                defaultSource={require('@/assets/images/icon.png')}
                             />
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                    )}
+                />
 
-                {/* Product Info */}
                 <View style={styles.productInfo}>
                     <Text style={styles.title}>{product.name}</Text>
                     <View style={styles.priceContainer}>
                         <Text style={styles.price}>
-                            OMR {product.price.discountedPrice}
+                            {product.price.formatted.discountedPrice}
                         </Text>
                         {product.discount.value > 0 && (
                             <Text style={styles.wasPrice}>
-                                was {product.price.price}
+                                was {product.price.formatted.price}
                             </Text>
                         )}
                     </View>
 
-                    {/* Quantity Selector */}
                     <View style={styles.quantitySelector}>
                         <TouchableOpacity onPress={decrementQuantity} style={styles.quantityButton}>
                             <Text style={styles.quantityButtonText}>−</Text>
@@ -221,46 +268,46 @@ export default function ProductPage() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Product Description */}
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>DESCRIPTION</Text>
                         <RenderHtml
-                            contentWidth={width}
-                            source={{ html: product.description }}
+                            contentWidth={width - 32}
+                            source={{ html: product.description || '<p>No description available</p>' }}
                         />
                     </View>
 
-                    {/* Variations */}
                     {product.productOptions?.length > 0 && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>VARIATIONS</Text>
-                            {product.productOptions.map((option: any, index: number) => (
-                                <View key={index} style={styles.variation}>
-                                    <Text style={styles.variationText}>{option.name}</Text>
-                                    {option.choices?.map((choice: any, idx: number) => (
-                                        <Text key={idx} style={styles.choiceText}>
-                                            {choice.description}
-                                        </Text>
-                                    ))}
-                                </View>
-                            ))}
+                            <FlatList
+                                data={product.productOptions}
+                                keyExtractor={(item, index) => index.toString()}
+                                renderItem={({ item }) => (
+                                    <View style={styles.variation}>
+                                        <Text style={styles.variationText}>{item.name}</Text>
+                                        {item.choices?.map((choice, idx) => (
+                                            <Text key={idx} style={styles.choiceText}>
+                                                {choice.description}
+                                            </Text>
+                                        ))}
+                                    </View>
+                                )}
+                            />
                         </View>
                     )}
 
-                    {/* Additional Info */}
-                    {product.additionalInfoSections?.map((section: any, index: number) => (
+                    {product.additionalInfoSections?.map((section, index) => (
                         <View key={index} style={styles.section}>
                             <Text style={styles.sectionTitle}>{section.title}</Text>
                             <RenderHtml
-                                contentWidth={width}
-                                source={{ html: section.description }}
+                                contentWidth={width - 32}
+                                source={{ html: section.description || '<p>No information available</p>' }}
                             />
                         </View>
                     ))}
                 </View>
             </ScrollView>
 
-            {/* Action Buttons */}
             <View style={styles.actionButtons}>
                 <TouchableOpacity
                     style={[styles.wishlistButton, addingToWishlist && styles.buttonDisabled]}
@@ -292,50 +339,60 @@ export default function ProductPage() {
                 </TouchableOpacity>
             </View>
 
-            {/* Success Modal */}
-            <Modal
-                visible={showSuccessModal}
-                transparent={true}
-                animationType="fade"
-            >
+            <Modal visible={showSuccessModal} transparent={true} animationType="fade">
                 <View style={styles.successModalContainer}>
                     <View style={styles.successModalContent}>
                         <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
                         <Text style={styles.successModalText}>{successMessage}</Text>
+                        <TouchableOpacity
+                            style={styles.viewBasketButton}
+                            onPress={() => {
+                                setShowSuccessModal(false);
+                                router.push('/basket');
+                            }}
+                        >
+                            <Text style={styles.viewBasketText}>VIEW BASKET</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
 
-            {/* Full-Size Image Modal */}
-            <Modal visible={isModalVisible} transparent={true} onRequestClose={closeImageModal}>
-                <ImageViewer
-                    imageUrls={product.media.items.map((item: any) => ({ url: item.image.url }))}
-                    index={selectedImageIndex}
-                    enableSwipeDown
-                    onSwipeDown={closeImageModal}
-                    enableImageZoom
-                    renderHeader={() => (
-                        <TouchableOpacity onPress={closeImageModal} style={styles.closeButton}>
-                            <Ionicons name="close" size={30} color="#fff" />
-                        </TouchableOpacity>
-                    )}
-                />
-            </Modal>
+            {isModalVisible && (
+                <Modal visible={true} transparent={true} onRequestClose={closeImageModal}>
+                    <View style={styles.imageViewerContainer}>
+                        <ImageViewer
+                            imageUrls={imageUrls}
+                            index={selectedImageIndex}
+                            enableSwipeDown
+                            onSwipeDown={closeImageModal}
+                            enableImageZoom
+                            renderIndicator={() => null}
+                            renderHeader={() => (
+                                <TouchableOpacity onPress={closeImageModal} style={styles.closeButton}>
+                                    <Ionicons name="close" size={30} color="#fff" />
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </Modal>
+            )}
 
-            {/* Variation Selection Modal */}
             <Modal visible={isVariationModalVisible} transparent={true} animationType="slide">
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Select Variation</Text>
-                        {product.productOptions?.map((option: any, index: number) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={styles.variationOption}
-                                onPress={() => handleVariationSelection(option)}
-                            >
-                                <Text style={styles.variationOptionText}>{option.name}</Text>
-                            </TouchableOpacity>
-                        ))}
+                        <FlatList
+                            data={product.productOptions}
+                            keyExtractor={(item, index) => index.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.variationOption}
+                                    onPress={() => handleVariationSelection(item)}
+                                >
+                                    <Text style={styles.variationOptionText}>{item.choices[0].description}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
                         <TouchableOpacity onPress={closeVariationModal} style={styles.closeModalButton}>
                             <Text style={styles.closeModalButtonText}>Close</Text>
                         </TouchableOpacity>
@@ -345,6 +402,7 @@ export default function ProductPage() {
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
@@ -366,10 +424,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666',
         marginBottom: 20,
+        marginTop: 12,
         textAlign: 'center',
     },
+    backButton: {
+        backgroundColor: '#E97777',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
     backButtonText: {
-        color: '#E97777',
+        color: '#fff',
         fontSize: 16,
         fontWeight: '600',
     },
@@ -391,6 +456,7 @@ const styles = StyleSheet.create({
     productImage: {
         height: 300,
         resizeMode: 'cover',
+        backgroundColor: '#f5f5f5',
     },
     productInfo: {
         padding: 16,
@@ -508,6 +574,16 @@ const styles = StyleSheet.create({
         top: 50,
         right: 20,
         zIndex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    imageViewerContainer: {
+        flex: 1,
+        backgroundColor: '#000',
     },
     modalContainer: {
         flex: 1,
@@ -571,11 +647,24 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
+        width: '80%',
     },
     successModalText: {
         fontSize: 16,
         color: '#2C3639',
         textAlign: 'center',
         fontWeight: '500',
+    },
+    viewBasketButton: {
+        backgroundColor: '#2C3639',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginTop: 8,
+    },
+    viewBasketText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });

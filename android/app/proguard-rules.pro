@@ -11,4 +11,7 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# expo-video
+-keep class expo.modules.video.** { *; }
+
 # Add any project specific keep options here:

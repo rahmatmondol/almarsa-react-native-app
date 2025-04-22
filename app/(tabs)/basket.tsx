@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { Link, router } from 'expo-router';
-import Header from '../components/Header';
-import { apiService } from '../services/apiService';
-import useStore from '../store/useStore';
+import { useCallback, useState } from 'react';
+import { Link, router, useFocusEffect } from 'expo-router';
+import Header from '@/app/components/Header';
+import { apiService } from '@/app/services/apiService';
+import useStore from '@/app/store/useStore';
 
 export default function Basket() {
   const [cart, setCart] = useState(null);
@@ -15,13 +15,16 @@ export default function Basket() {
   const [updating, setUpdating] = useState(false);
   const { setBasket, isAuthenticated } = useStore();
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/auth');
-      return;
-    }
-    getCart();
-  }, [isAuthenticated]);
+  if (!isAuthenticated) {
+    router.push('/auth');
+    return;
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      getCart();
+    }, [])
+  );
 
   const getCart = async () => {
     try {
@@ -33,7 +36,10 @@ export default function Basket() {
         setBasket(res.product.items.length);
       }
     } catch (error) {
-      console.error('Error fetching cart:', error);
+      console.log('Error fetching cart:', error);
+      setCart(null);
+      setCartItems([]);
+      setBasket(0);
     } finally {
       setLoading(false);
     }
@@ -49,7 +55,7 @@ export default function Basket() {
         setBasket(res.cart.items.length);
       }
     } catch (error) {
-      console.error('Error removing item:', error);
+      console.log('Error removing item:', error);
     } finally {
       setUpdating(false);
     }
@@ -76,7 +82,7 @@ export default function Basket() {
         setBasket(res.cart.items.length);
       }
     } catch (error) {
-      console.error('Error updating cart:', error);
+      console.log('Error updating cart:', error);
     } finally {
       setUpdating(false);
     }
@@ -141,14 +147,14 @@ export default function Basket() {
               </View>
             </View>
             <View style={styles.itemActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => handleRemoveItem(item.id)}
                 disabled={updating}
               >
-                <Ionicons 
-                  name="close-circle-outline" 
-                  size={24} 
-                  color={updating ? "#ccc" : "#E97777"} 
+                <Ionicons
+                  name="close-circle-outline"
+                  size={24}
+                  color={updating ? "#ccc" : "#E97777"}
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -156,10 +162,10 @@ export default function Basket() {
                 onPress={() => handleEditItem(item)}
                 disabled={updating}
               >
-                <Ionicons 
-                  name="chevron-down" 
-                  size={24} 
-                  color={updating ? "#ccc" : "#666"} 
+                <Ionicons
+                  name="chevron-down"
+                  size={24}
+                  color={updating ? "#ccc" : "#666"}
                 />
               </TouchableOpacity>
             </View>
@@ -173,7 +179,7 @@ export default function Basket() {
             <Text style={styles.continueButtonText}>BACK TO SHOP</Text>
           </TouchableOpacity>
         </Link>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.checkoutButton}
           onPress={() => router.push('/checkout')}
         >

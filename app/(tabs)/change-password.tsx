@@ -1,15 +1,20 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { apiService } from '../services/apiService';
+import { IconSymbol } from '@/app-example/components/ui/IconSymbol.ios';
 
 export default function ChangePassword() {
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(null);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
     confirm: false,
   });
-  
+
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -17,12 +22,32 @@ export default function ChangePassword() {
   });
 
   const handleBack = () => {
-    router.back();
+    router.push('/settings');
   };
 
-  const handleSubmit = () => {
-    // Handle password change logic here
-    router.back();
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiService.ChangePassword({
+        current_password: formData.currentPassword,
+        password: formData.newPassword,
+        password_confirmation: formData.confirmPassword,
+      });
+      if (response.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+          handleBack();
+        }, 2000);
+      }
+      console.log('Password changed successfully', response);
+    } catch (error) {
+      console.log('Error changing password:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,6 +62,7 @@ export default function ChangePassword() {
 
       <View style={styles.content}>
         {/* Form Fields */}
+
         <View style={styles.form}>
           <View style={styles.passwordContainer}>
             <TextInput
@@ -100,21 +126,39 @@ export default function ChangePassword() {
 
           {/* Password Requirements */}
           <View style={styles.requirementsContainer}>
-            <Text style={styles.requirementsTitle}>
-              Password must be at least 8 characters and should include:
-            </Text>
-            <Text style={styles.requirementText}>1 uppercase letter ( A-Z )</Text>
-            <Text style={styles.requirementText}>1 lowercase letter ( a-z )</Text>
-            <Text style={styles.requirementText}>1 number ( 0-9 )</Text>
-            <Text style={styles.requirementText}>1 special character ( @$%&+ )</Text>
+            <Text style={styles.error}>{error}</Text>
           </View>
         </View>
       </View>
 
       {/* Submit Button */}
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Submit</Text>
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color="#fff"
+            style={styles.submitButtonText}
+          />
+        ) : (
+          <Text style={styles.submitButtonText}>Submit</Text>
+        )}
+
       </TouchableOpacity>
+
+      <Modal visible={success} transparent={true}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Ionicons
+              name="checkmark-circle"
+              size={40}
+              color="#1abc9c"
+              style={styles.modalIcon}
+            />
+            <Text style={styles.modalText}>Password changed successfully</Text>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -190,4 +234,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#2C3639',
+    padding: 24,
+    borderRadius: 8,
+  },
+  modalText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 16,
+  },
+  modalIcon: {
+    alignSelf: 'center',
+  },
+  error: {
+    color: 'red',
+  },
+
 });

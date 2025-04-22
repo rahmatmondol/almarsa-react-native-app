@@ -1,4 +1,6 @@
-import api from '@/app/utils/api';
+import ChangeEmail from '../(tabs)/change-email';
+import ChangePassword from '../(tabs)/change-password';
+import api from '../utils/api';
 import * as SecureStore from 'expo-secure-store';
 // is authenticated
 export const authToken = async () => {
@@ -31,6 +33,12 @@ export const apiService = {
     // Auth
     login: (data: any) => api.post('/login', data),
     register: (data: any) => api.post('/register', data),
+    updateProfile: (data: any) => api.post('/auth/update-profile', data),
+    ChangePassword: (data: any) => api.post('/auth/change-password', data),
+    forgotPassword: (data: any) => api.post('/forget-password', data),
+    resetPassword: (data: any) => api.post('/reset-password', data),
+    logout: () => api.post('/auth/logout'),
+    ChangeEmail: (data: any) => api.post('/auth/change-email', data),
 
     // add to cart
     addToCart: (data: any) => api.post('/auth/cart', data),
@@ -61,10 +69,19 @@ export const apiService = {
 
     //placeOrder
     placeOrder: (data: any) => api.post('/auth/order', data),
+    orderAgain: (data: any) => api.post('/auth/order-again', data),
 
     //get order
     getOrders: () => api.get('/auth/orders'),
 
     //get order details
     getOrderDetails: (id: number) => api.get(`/auth/order/${id}`),
+    // address
+    getAddresses: () => api.get('/auth/get-addresses'),
+    getAddress: (id: number) => api.get(`/auth/get-address/${id}`),
+    addAddress: (data: any) => api.post('/auth/add-address', data),
+    updateAddress: (id: number, data: any) => api.post(`/auth/update-address/${id}`, data),
+    deleteAddress: (id: number) => api.delete(`/auth/delete-address/${id}`),
+
+    updatePushToken: (data: any) => api.post('/auth/update-push-token', data),
 };

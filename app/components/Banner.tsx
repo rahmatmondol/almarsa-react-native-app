@@ -4,7 +4,7 @@ function Banner({ title = '', image = '', description = '', icon = '' }) {
     return (
         <View style={styles.heroSection}>
             <Image
-                source={{ uri: image }}
+                source={image ? { uri: image } : require('@/assets/images/default-banner.png')}
                 style={styles.heroImage}
                 resizeMode="cover"
             />
@@ -13,7 +13,7 @@ function Banner({ title = '', image = '', description = '', icon = '' }) {
                 <Text style={styles.heroTextAccent}>{title}</Text>
             </Text>
             <Image
-                source={{ uri: icon }}
+                source={icon ? { uri: icon } : require('@/assets/images/icon.png')}
                 style={styles.heroIcon}
             />
         </View>
@@ -57,6 +57,6 @@ const styles = StyleSheet.create({
         top: 30,
     },
     heroTextAccent: {
-        color: '#E97777',
+        color: '#fff',
     },
 });

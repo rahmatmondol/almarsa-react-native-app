@@ -1,12 +1,13 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import useStore from '../store/useStore';
+import useStore from '@/app/store/useStore';
 import { useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { router } from 'expo-router';
+import { ref, onValue, off } from 'firebase/database';
+import { database } from '../../firebaseConfig';
 
 export default function TabLayout() {
-  const { isAuthenticated, setUser, logout, setBasket, setWishlist, basket } = useStore();
+  const { isAuthenticated, user, setUser, setBasket, setWishlist, basket, setNotifications } = useStore();
 
   const loadUserData = async () => {
     try {
@@ -36,6 +37,29 @@ export default function TabLayout() {
   };
 
   useEffect(() => {
+    // Fetch notifications data
+    const startNotificationsListener = () => {
+      const notificationsReference = ref(database, `notifications/user_${user?.data?.id}`);
+      onValue(notificationsReference, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const notifications = Object.keys(data)
+            .map((key) => ({
+              id: key,
+              ...data[key],
+            }))
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          const unreadCount = notifications.filter(notification => !notification.read_at).length;
+          setNotifications(unreadCount);
+        }
+      });
+    }
+
+    if (isAuthenticated) {
+      startNotificationsListener();
+    }
+
+
     if (!isAuthenticated) {
       loadUserData();
     }
@@ -71,6 +95,7 @@ export default function TabLayout() {
             <Ionicons name="basket" size={size} color={color} />
           ),
           tabBarBadge: basket > 0 ? basket.toString() : undefined,
+
         }}
       />
       <Tabs.Screen
@@ -114,6 +139,8 @@ export default function TabLayout() {
       <Tabs.Screen name="order/[id]" options={{ href: null }} />
       <Tabs.Screen name="wishlist" options={{ href: null }} />
       <Tabs.Screen name="product/[id]" options={{ href: null }} />
+      <Tabs.Screen name="addresses" options={{ href: null }} />
+      <Tabs.Screen name="add-address" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Image } from 'react-native';
-import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
 import useStore from '@/app/store/useStore';
@@ -16,13 +16,15 @@ export default function OrderHistory() {
   const [ratingOrder, setRatingOrder] = useState(null);
   const [selectedRating, setSelectedRating] = useState(0);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/auth');
-      return;
-    }
-    loadOrders();
-  }, [isAuthenticated]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated) {
+        router.replace('/auth');
+        return;
+      }
+      loadOrders();
+    }, [isAuthenticated])
+  );
 
   const loadOrders = async () => {
     try {
@@ -171,7 +173,7 @@ export default function OrderHistory() {
 
               <TouchableOpacity
                 style={styles.orderAgainButton}
-                onPress={() => handleOrderAgain(4)}
+                onPress={() => router.push(`/checkout?orderId=${order.id}`)}
               >
                 <Text style={styles.orderAgainText}>Order again</Text>
               </TouchableOpacity>

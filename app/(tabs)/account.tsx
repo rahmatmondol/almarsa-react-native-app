@@ -1,17 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import Header from '../components/Header';
+import Header from '@/app/components/Header';
 import * as SecureStore from 'expo-secure-store';
-import { useEffect, useState } from 'react';
-import useStore from '../store/useStore';
+import { useEffect } from 'react';
+import useStore from '@/app/store/useStore';
 
 export default function Account() {
   const { user, logout, isAuthenticated } = useStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace('/auth');
+      router.push('/auth');
     }
   }, [isAuthenticated]);
 
@@ -29,20 +29,18 @@ export default function Account() {
       logout();
 
       // Navigate to auth
-      router.replace('/auth');
+      router.push('/auth');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.log('Logout error:', error);
       // Still logout even if there's an error clearing storage
       logout();
-      router.replace('/auth');
+      router.push('/auth');
     }
   };
 
   if (!isAuthenticated || !user) {
     return null;
   }
-
-  console.log(user);
 
   return (
     <ScrollView style={styles.container}>
@@ -51,26 +49,12 @@ export default function Account() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Hero Section */}
-        {user?.data.image &&
-          <View style={styles.heroSection}>
-            <Image
-              source={{ uri: user?.data.image }}
-              style={styles.heroImage}
-            />
-            <View style={styles.heroOverlay} />
-            <View style={styles.userInfo}>
-              <Image source={{ uri: user?.data.image }} style={styles.avatar} />
-              <Text style={styles.userName}>{user?.data.name}</Text>
-            </View>
-          </View>
-        }
 
         {/* Contact Information */}
         <View style={styles.section}>
           <TouchableOpacity style={styles.infoItem}>
             <Ionicons name="mail-outline" size={24} color="#666" />
-            <Text style={styles.infoText}>{user?.data.email}</Text>
+            <Text style={styles.infoText}>{user?.data.email || 'N/A'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.infoItem}>
@@ -104,7 +88,7 @@ export default function Account() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/edit-address')}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/addresses')}>
             <View style={styles.actionIcon}>
               <Ionicons name="location-outline" size={24} color="#E97777" />
             </View>

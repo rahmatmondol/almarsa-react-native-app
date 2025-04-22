@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Header from '../components/Header';
-import Banner from '../components/Banner';
+import Header from '@/app/components/Header';
+import Banner from '@/app/components/Banner';
 import { useEffect, useState } from 'react';
-import { apiService } from '../services/apiService';
+import { apiService } from '@/app/services/apiService';
 
 export default function Home() {
 
@@ -31,6 +31,7 @@ export default function Home() {
         <Banner
           image={homeData.image || null}
           icon={homeData.icon || null}
+          title={homeData.title || ''}
         />
 
         <View style={styles.menuGrid}>
@@ -49,7 +50,10 @@ export default function Home() {
                     style={styles.menuItemIcon}
                   />
                 ) : (
-                  <Ionicons name={item.icon} size={100} color="#E97777" />
+                  <Image
+                    source={require('@/assets/images/shop-icon.png')}
+                    style={styles.menuItemIcon}
+                  />
                 )}
                 {item.ribbon && (
                   <View style={styles.ribbon}>

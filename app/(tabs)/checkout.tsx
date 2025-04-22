@@ -1,29 +1,117 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from 'react-native';
-import { Link, router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert } from 'react-native';
+import { Link, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
-import * as SecureStore from 'expo-secure-store';
 import useStore from '@/app/store/useStore';
 
 export default function Checkout() {
+  const { orderId } = useLocalSearchParams();
   const [selectedPayment, setSelectedPayment] = useState('cash');
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const { isAuthenticated, user } = useStore();
+  const [successMessage, setSuccessMessage] = useState('Order placed successfully!');
+  const { isAuthenticated, setBasket } = useStore();
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [addresses, setAddresses] = useState([]);
 
-  if (!isAuthenticated) {
-    router.replace('/auth');
-    return null;
-  }
+  // Check authentication
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated) {
+        router.replace('/auth');
+      }
+    }, [isAuthenticated])
+  );
 
-  // check have shipping address
-  if (!user.shipping_first_name || !user.shipping_last_name || !user.shipping_phone || !user.shipping_address || !user.shipping_city || !user.shipping_state || !user.shipping_postal_code) {
-    router.replace('/edit-address');
-    return null;
-  }
+  // Load data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        if (orderId) {
+          loadOrderDetails();
+        } else {
+          getCart();
+        }
+        loadAddresses();
+      }
+    }, [isAuthenticated, orderId])
+  );
+
+  const loadOrderDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getOrderDetails(orderId);
+      if (response.success) {
+        setCart(response.data);
+        setSuccessMessage('Your order will be recreated');
+      } else {
+        console.error('Failed to load order details:', response.message);
+        Alert.alert('Error', 'Failed to load order details');
+      }
+    } catch (error) {
+      console.error('Error loading order details:', error);
+      Alert.alert('Error', 'Failed to load order details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAddresses = async () => {
+    try {
+      const response = await apiService.getAddresses();
+
+      if (response.success) {
+        setAddresses(response.addresses || []);
+
+        if (response.addresses.length === 0) {
+          // Redirect to add address if no addresses exist
+          Alert.alert(
+            "No Delivery Address",
+            "You need to add a delivery address before checkout.",
+            [
+              { text: "Add Address", onPress: () => router.push('/add-address') }
+            ]
+          );
+          return;
+        }
+
+        // Set default address as selected if available
+        const defaultAddress = response.addresses.find(addr => addr.is_default);
+        if (defaultAddress) {
+          setSelectedAddress(defaultAddress);
+        } else if (response.addresses.length > 0) {
+          setSelectedAddress(response.addresses[0]);
+        }
+      } else {
+        console.error('Failed to load addresses:', response.message);
+      }
+    } catch (error) {
+      console.error('Error loading addresses:', error);
+    }
+  };
+
+  const formatAddressDetails = (address) => {
+    if (!address) return "No address selected";
+
+    const parts = [];
+
+    if (address.is_apartment) {
+      if (address.building_name) parts.push(address.building_name);
+      if (address.apartment_number) parts.push(`Apt. ${address.apartment_number}`);
+      if (address.floor) parts.push(`Floor ${address.floor}`);
+    } else {
+      if (address.house_number) parts.push(`House ${address.house_number}`);
+    }
+
+    if (address.street) parts.push(address.street);
+    if (address.block) parts.push(`Block ${address.block}`);
+    if (address.way) parts.push(`Way ${address.way}`);
+
+    return parts.join(', ');
+  };
 
   const handleBack = () => {
     router.back();
@@ -31,42 +119,60 @@ export default function Checkout() {
 
   const getCart = async () => {
     try {
+      setLoading(true);
       const res = await apiService.getCart();
       setCart(res.product);
     } catch (error) {
       console.error('Error fetching cart:', error);
+      Alert.alert('Error', 'Failed to load cart');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    getCart();
-  }, []);
-
   const handlePlaceOrder = async () => {
+    if (!selectedAddress) {
+      Alert.alert("Error", "Please select a delivery address");
+      return;
+    }
+
     try {
       setPlacingOrder(true);
-      // Call your order placement API here
-      const response = await apiService.placeOrder({
-        'fist_name': user.shipping_first_name,
-        'last_name': user.shipping_last_name,
-        'email': user.email,
-        'phone': user.shipping_phone,
-        'address': user.shipping_address,
-        'address2': user.shipping_address2,
-        'city': user.shipping_city,
-        'state': user.shipping_state,
-        'postal_code': user.shipping_postal_code
-      });
+      let response;
+
+      if (orderId) {
+        // Reorder existing order
+        response = await apiService.orderAgain({
+          order_id: orderId,
+          address_id: selectedAddress.id.toString(),
+        });
+      } else {
+        // Place new order
+        response = await apiService.placeOrder({
+          address_id: selectedAddress.id.toString(),
+        });
+      }
 
       if (response.success) {
+        // Update success message based on order type
+        setSuccessMessage(orderId ? 'Order recreated successfully!' : 'Order placed successfully!');
         setShowSuccessModal(true);
+
+        // Reset basket count
+        setBasket(0);
+
         // Wait for 2 seconds before redirecting
         setTimeout(() => {
           setShowSuccessModal(false);
-          router.replace('/(tabs)');
+          // Redirect to order details if we have an order ID, otherwise to orders list
+          if (response.order?.id) {
+            router.replace(`/order/${response.order.id}`);
+          } else {
+            router.replace('/orders');
+          }
         }, 2000);
+      } else {
+        Alert.alert("Error", response.message || "Failed to place order");
       }
     } catch (error) {
       console.error('Error placing order:', error);
@@ -90,7 +196,7 @@ export default function Checkout() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color="#2C3639" />
-          <Text style={styles.headerTitle}>Check out</Text>
+          <Text style={styles.headerTitle}>{orderId ? 'Reorder' : 'Check out'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -101,10 +207,20 @@ export default function Checkout() {
             <Ionicons name="location-outline" size={24} color="#2C3639" />
             <Text style={styles.sectionTitle}>Delivery Address</Text>
           </View>
-          <Text style={styles.addressText}>123 Main Street, City</Text>
-          <TouchableOpacity>
-            <Link href="/edit-address" style={styles.changeLink}>Change</Link>
-          </TouchableOpacity>
+          {selectedAddress ? (
+            <>
+              <Text style={styles.addressTitle}>{selectedAddress.address || 'Delivery Address'}</Text>
+              <Text style={styles.addressText}>{formatAddressDetails(selectedAddress)}</Text>
+              <Text style={styles.addressPhone}>Phone: {selectedAddress.phone}</Text>
+              <TouchableOpacity>
+                <Link href="/addresses" style={styles.changeLink}>Change</Link>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity onPress={() => router.push('/addresses')}>
+              <Text style={styles.noAddressText}>No address selected. Tap to select an address.</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Payment Method */}
@@ -131,19 +247,19 @@ export default function Checkout() {
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>OMR {cart?.sub_total}</Text>
+            <Text style={styles.summaryValue}>OMR {cart?.sub_total || '0.000'}</Text>
           </View>
 
           {cart?.discount > 0 && (
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Discount</Text>
-              <Text style={styles.summaryValue}>-OMR {cart?.discount}</Text>
+              <Text style={styles.discountValue}>-OMR {cart?.discount}</Text>
             </View>
           )}
 
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>OMR {cart?.grand_total}</Text>
+            <Text style={styles.totalValue}>OMR {cart?.grand_total || '0.000'}</Text>
           </View>
         </View>
 
@@ -160,12 +276,12 @@ export default function Checkout() {
       <TouchableOpacity
         style={[styles.placeOrderButton, placingOrder && styles.buttonDisabled]}
         onPress={handlePlaceOrder}
-        disabled={placingOrder}
+        disabled={placingOrder || !selectedAddress}
       >
         {placingOrder ? (
           <ActivityIndicator size="small" color="#fff" />
         ) : (
-          <Text style={styles.placeOrderText}>PLACE ORDER</Text>
+          <Text style={styles.placeOrderText}>{orderId ? 'REORDER' : 'PLACE ORDER'}</Text>
         )}
       </TouchableOpacity>
 
@@ -178,7 +294,12 @@ export default function Checkout() {
         <View style={styles.successModalContainer}>
           <View style={styles.successModalContent}>
             <Ionicons name="checkmark-circle" size={50} color="#4CAF50" />
-            <Text style={styles.successModalText}>Order placed successfully!</Text>
+            <Text style={styles.successModalText}>{successMessage}</Text>
+            {orderId && (
+              <Text style={styles.successModalSubtext}>
+                Based on order #{orderId}
+              </Text>
+            )}
           </View>
         </View>
       </Modal>
@@ -234,10 +355,27 @@ const styles = StyleSheet.create({
     color: '#2C3639',
     marginBottom: 16,
   },
+  addressTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#2C3639',
+    marginBottom: 4,
+  },
   addressText: {
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
+  },
+  addressPhone: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  noAddressText: {
+    fontSize: 14,
+    color: '#E97777',
+    marginBottom: 8,
+    textDecorationLine: 'underline',
   },
   changeLink: {
     color: '#E97777',
@@ -287,6 +425,10 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 14,
     color: '#2C3639',
+  },
+  discountValue: {
+    fontSize: 14,
+    color: '#E97777',
   },
   totalRow: {
     borderTopWidth: 1,
@@ -339,8 +481,8 @@ const styles = StyleSheet.create({
   },
   successModalContent: {
     backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
+    padding: 24,
+    borderRadius: 12,
     alignItems: 'center',
     gap: 10,
     shadowColor: '#000',
@@ -351,11 +493,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+    minWidth: '80%',
   },
   successModalText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#2C3639',
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  successModalSubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });

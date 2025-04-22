@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import { ref, onValue, off } from 'firebase/database';
+import { database } from '@/firebaseConfig';
+
 
 interface User {
     token: string;

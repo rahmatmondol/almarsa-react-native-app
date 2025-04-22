@@ -52,7 +52,7 @@ export default function Register() {
     try {
       setLoading(true);
       setErrors({});
-      
+
       const response = await apiService.register({
         email,
         password,
@@ -68,7 +68,7 @@ export default function Register() {
       // Store user data securely
       await SecureStore.setItemAsync('userData', JSON.stringify(response.user));
       await SecureStore.setItemAsync('authToken', response.token);
-      
+
       setUser({
         token: response.token,
         data: response.user,
@@ -96,8 +96,8 @@ export default function Register() {
         <Ionicons name="chevron-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
       >
@@ -112,7 +112,7 @@ export default function Register() {
             ))}
           </View>
         )}
-        
+
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <TextInput
@@ -211,8 +211,8 @@ export default function Register() {
             )}
           </View>
 
-          <TouchableOpacity 
-            style={[styles.registerButton, loading && styles.registerButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.registerButton, loading && styles.registerButtonDisabled]}
             onPress={handleRegister}
             disabled={loading}
           >

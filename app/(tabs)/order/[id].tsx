@@ -1,17 +1,20 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiService } from '@/app/services/apiService';
+import Header from '@/app/components/Header';
 
 export default function OrderDetails() {
   const { id } = useLocalSearchParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadOrderDetails();
-  }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      loadOrderDetails();
+    }, [])
+  );
 
   const loadOrderDetails = async () => {
     try {
@@ -28,11 +31,31 @@ export default function OrderDetails() {
   };
 
   const handleBack = () => {
-    router.back();
+    router.push('/orders');
+  };
+
+  const formatAddressDetails = (address) => {
+    if (!address) return "No address information";
+
+    const parts = [];
+
+    if (address.is_apartment) {
+      if (address.building_name) parts.push(address.building_name);
+      if (address.apartment_number) parts.push(`Apt. ${address.apartment_number}`);
+      if (address.floor) parts.push(`Floor ${address.floor}`);
+    } else {
+      if (address.house_number) parts.push(`House ${address.house_number}`);
+    }
+
+    if (address.street) parts.push(address.street);
+    if (address.block) parts.push(`Block ${address.block}`);
+    if (address.way) parts.push(`Way ${address.way}`);
+
+    return parts.join(', ');
   };
 
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'completed':
         return styles.statusCompleted;
       case 'processing':
@@ -74,6 +97,7 @@ export default function OrderDetails() {
 
   return (
     <View style={styles.container}>
+      {/* <Header title="Order Details" onBack={handleBack} /> */}
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
@@ -87,7 +111,7 @@ export default function OrderDetails() {
         <View style={styles.section}>
           <View style={styles.orderHeader}>
             <Text style={[styles.orderStatus, getStatusColor(order.status)]}>
-              {order.status.toUpperCase()}
+              {order.status?.toUpperCase()}
             </Text>
             <Text style={styles.orderDate}>
               {new Date(order.created_at).toLocaleDateString()}
@@ -104,17 +128,12 @@ export default function OrderDetails() {
           </View>
           <View style={styles.addressDetails}>
             <Text style={styles.addressName}>
-              {order.shipping_first_name} {order.shipping_last_name}
+              {order?.address?.address || 'Delivery Address'}
             </Text>
-            <Text style={styles.addressText}>{order.shipping_address}</Text>
-            {order.shipping_address2 && (
-              <Text style={styles.addressText}>{order.shipping_address2}</Text>
+            <Text style={styles.addressText}>{formatAddressDetails(order.address)}</Text>
+            {order?.address?.phone && (
+              <Text style={styles.addressText}>Phone: {order.address.phone}</Text>
             )}
-            <Text style={styles.addressText}>
-              {order.shipping_city}, {order.shipping_state || ''} {order.shipping_postal_code}
-            </Text>
-            <Text style={styles.addressText}>{order.shipping_country}</Text>
-            <Text style={styles.addressText}>Phone: {order.shipping_phone}</Text>
           </View>
         </View>
 
@@ -126,7 +145,10 @@ export default function OrderDetails() {
           </View>
           {order.items.map((item) => (
             <View key={item.id} style={styles.itemCard}>
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
+              <Image
+                source={{ uri: item.image }}
+                style={styles.itemImage}
+              />
               <View style={styles.itemDetails}>
                 <Text style={styles.itemName} numberOfLines={2}>
                   {item.name}
@@ -197,15 +219,15 @@ export default function OrderDetails() {
 
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.supportButton}
           onPress={() => router.push('/contact')}
         >
           <Text style={styles.supportButtonText}>CONTACT SUPPORT</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.reorderButton}
-          onPress={() => router.push('/reorder/' + order.id)}
+          onPress={() => router.push(`/checkout?orderId=${order.id}`)}
         >
           <Text style={styles.reorderButtonText}>REORDER</Text>
         </TouchableOpacity>
@@ -360,6 +382,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 8,
     marginRight: 12,
+    backgroundColor: '#eee',
   },
   itemDetails: {
     flex: 1,
