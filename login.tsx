@@ -24,19 +24,12 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
- const redirectUri = makeRedirectUri({
-  scheme: 'your-app-scheme' // Replace with your app's scheme from app.json
-});
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    androidClientId: '208983196244-ct9ka44e5tli2aroh4kherpb94cqi37s.apps.googleusercontent.com',
+    webClientId: '208983196244-s63qnp1i36mccagvm54b9b8h2t6t2cda.apps.googleusercontent.com', 
+    redirectUri: 'http://localhost:8081',
+  });
 
-// Then update your Google auth configuration
-const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-  androidClientId: '208983196244-ct9ka44e5tli2aroh4kherpb94cqi37s.apps.googleusercontent.com',
-  webClientId: '208983196244-s63qnp1i36mccagvm54b9b8h2t6t2cda.apps.googleusercontent.com',
-  redirectUri: redirectUri,
-  // Add these recommended properties:
-  responseType: 'id_token',
-  scopes: ['profile', 'email']
-});
 
   // Function to handle Google login
 
