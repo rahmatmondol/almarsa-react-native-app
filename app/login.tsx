@@ -1,55 +1,126 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { Link, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import useStore from '@/app/store/useStore';
-import { apiService } from '@/app/services/apiService';
-import * as SecureStore from 'expo-secure-store';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import { makeRedirectUri } from 'expo-auth-session';
+import {
+  GoogleSignin,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
+import { Link, router } from "expo-router";
+import React from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Button,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { apiService } from "@/app/services/apiService";
+import useStore from "@/app/store/useStore";
+import { Ionicons } from "@expo/vector-icons";
+import * as Google from "expo-auth-session/providers/google";
+import * as SecureStore from "expo-secure-store";
+import * as WebBrowser from "expo-web-browser";
+import { useEffect, useState } from "react";
 WebBrowser.maybeCompleteAuthSession();
 
 // Constants for SecureStore keys
-const USER_DATA_KEY = 'userData';
-const AUTH_TOKEN_KEY = 'authToken';
-const WISHLIST_KEY = 'wishlist';
-const BASKET_KEY = 'basket';
+const USER_DATA_KEY = "userData";
+const AUTH_TOKEN_KEY = "authToken";
+const WISHLIST_KEY = "wishlist";
+const BASKET_KEY = "basket";
 
 export default function Login() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState<any>(false);
+  const [email, setEmail] = useState<any>("");
+  const [password, setPassword] = useState<any>("");
   const { setUser, setBasket, setWishlist } = useStore();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
+  const [userInfo, setUserInfo] = useState<any | null>(null);
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    androidClientId: '208983196244-ct9ka44e5tli2aroh4kherpb94cqi37s.apps.googleusercontent.com',
-    webClientId: '208983196244-s63qnp1i36mccagvm54b9b8h2t6t2cda.apps.googleusercontent.com', 
-    redirectUri: 'http://localhost:8081',
+    androidClientId:
+      "208983196244-ct9ka44e5tli2aroh4kherpb94cqi37s.apps.googleusercontent.com",
+    webClientId:
+      "208983196244-s63qnp1i36mccagvm54b9b8h2t6t2cda.apps.googleusercontent.com",
+    redirectUri: "http://localhost:8081",
   });
 
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId:
+        "976489237460-1d13o0q0jr4k2e509g63e90gaju3af9l.apps.googleusercontent.com",
+      offlineAccess: true,
+    });
+  }, []);
+
+  const signIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const result: any = await GoogleSignin.signIn();
+
+      const googleData: any | undefined = result?.data;
+      console.log("Data =>>", googleData);
+
+      if (googleData?.user) {
+        setUserInfo(googleData);
+        Alert.alert("Signed In", `Welcome, ${googleData.user.name}`);
+      } else {
+        console.warn("User object is malformed:", result);
+        Alert.alert("Error", "Google sign-in returned unexpected data.");
+      }
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        Alert.alert("Cancelled", "User cancelled the login flow");
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        Alert.alert("In Progress", "Sign in is already in progress");
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert("Error", "Play services not available or outdated");
+      } else {
+        console.error("Unexpected error during sign in:", error);
+        Alert.alert("Error", "Something went wrong");
+      }
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await GoogleSignin.signOut();
+      setUserInfo(null);
+      Alert.alert("Signed Out", "You have been signed out");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Function to handle Google login
 
-
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      setError('Please enter a valid email and password');
+      setError("Please enter a valid email and password");
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.login({ email, password });
+      const response: any = await apiService.login({ email, password });
 
       // Store user data securely
-      await SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(response.user));
+      await SecureStore.setItemAsync(
+        USER_DATA_KEY,
+        JSON.stringify(response.user)
+      );
       await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
-      await SecureStore.setItemAsync(WISHLIST_KEY, response.wishlists_count.toString());
-      await SecureStore.setItemAsync(BASKET_KEY, response.cart_count.toString());
+      await SecureStore.setItemAsync(
+        WISHLIST_KEY,
+        response.wishlists_count.toString()
+      );
+      await SecureStore.setItemAsync(
+        BASKET_KEY,
+        response.cart_count.toString()
+      );
 
       // Update global state
       setUser({
@@ -60,8 +131,8 @@ export default function Login() {
       setWishlist(response.wishlists_count);
 
       // Navigate to the main app
-      router.push('/(tabs)');
-    } catch (error) {
+      router.push("/(tabs)");
+    } catch (error: any) {
       setError(error.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
@@ -78,7 +149,7 @@ export default function Login() {
       setError(null);
       const result = await promptAsync();
 
-      if (result.type === 'success') {
+      if (result.type === "success") {
         const { idToken } = result.params;
 
         // Handle Google login with idToken
@@ -104,7 +175,7 @@ export default function Login() {
       } else {
         setError("Google login failed. Please try again.");
       }
-    } catch (error) {
+    } catch (error: any) {
       setError(error.message || "Google login failed. Please try again.");
     } finally {
       setLoading(false);
@@ -119,7 +190,7 @@ export default function Login() {
 
       <View style={styles.content}>
         <Text style={styles.welcomeText}>
-          Welcome back, glad to see{'\n'}you, Again!
+          Welcome back, glad to see{"\n"}you, Again!
         </Text>
 
         {error && (
@@ -153,14 +224,14 @@ export default function Login() {
               onPress={() => setShowPassword(!showPassword)}
             >
               <Ionicons
-                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
                 size={24}
                 color="#999"
               />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity onPress={() => router.push('/forget-password')}>
+          <TouchableOpacity onPress={() => router.push("/forget-password")}>
             <Text style={styles.forgotPassword}>Forgot your password?</Text>
           </TouchableOpacity>
 
@@ -175,11 +246,12 @@ export default function Login() {
               <Text style={styles.loginButtonText}>LOGIN</Text>
             )}
           </TouchableOpacity>
+          <Button title="Sign Out" onPress={signOut} />
 
           <Text style={styles.orText}>Or login with</Text>
 
           <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin}>
+            <TouchableOpacity style={styles.socialButton} onPress={signIn}>
               <Ionicons name="logo-google" size={24} color="#E97777" />
             </TouchableOpacity>
           </View>
@@ -201,10 +273,10 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2C3639',
+    backgroundColor: "#2C3639",
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 48,
     left: 16,
     zIndex: 1,
@@ -215,96 +287,96 @@ const styles = StyleSheet.create({
     paddingTop: 120,
   },
   welcomeText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 28,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
     marginBottom: 40,
     lineHeight: 36,
   },
   form: {
-    width: '100%',
+    width: "100%",
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,
     fontSize: 16,
   },
   passwordContainer: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 16,
   },
   passwordInput: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 16,
     fontSize: 16,
     paddingRight: 50,
   },
   eyeIcon: {
-    position: 'absolute',
+    position: "absolute",
     right: 16,
     top: 16,
   },
   forgotPassword: {
-    color: '#fff',
-    textAlign: 'right',
+    color: "#fff",
+    textAlign: "right",
     marginBottom: 24,
   },
   loginButton: {
-    backgroundColor: '#E97777',
+    backgroundColor: "#E97777",
     borderRadius: 8,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
   },
   loginButtonDisabled: {
     opacity: 0.7,
   },
   loginButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   orText: {
-    color: '#fff',
-    textAlign: 'center',
+    color: "#fff",
+    textAlign: "center",
     marginBottom: 24,
   },
   socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 20,
     marginBottom: 24,
   },
   socialButton: {
     width: 50,
     height: 50,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
   registerText: {
-    color: '#fff',
+    color: "#fff",
   },
   registerLink: {
-    color: '#E97777',
-    fontWeight: '600',
+    color: "#E97777",
+    fontWeight: "600",
   },
   errorContainer: {
     marginTop: 4,
     paddingHorizontal: 4,
   },
   errorText: {
-    color: '#E97777',
+    color: "#E97777",
     fontSize: 16,
   },
 });
