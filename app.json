@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "com.almarsa.app",
+    "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "assetBundlePatterns": ["**/*"],
@@ -13,10 +13,6 @@
       "supportsTablet": true,
       "runtimeVersion": {
         "policy": "appVersion"
-      },
-      "bundleIdentifier": "com.almarsa.app",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
