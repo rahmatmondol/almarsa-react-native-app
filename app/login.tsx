@@ -42,16 +42,17 @@ export default function login() {
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     androidClientId:
-      "208983196244-ct9ka44e5tli2aroh4kherpb94cqi37s.apps.googleusercontent.com",
+      "39921743232-gh0rbugmppomuccm1tpdspt7tefq0mu6.apps.googleusercontent.com",
     webClientId:
-      "208983196244-s63qnp1i36mccagvm54b9b8h2t6t2cda.apps.googleusercontent.com",
+      "39921743232-0f0jacg0ubmiks4cg3q8n4f9bd0udip1.apps.googleusercontent.com",
+    iosClientId:"39921743232-j4fdm83469f7gn0uc0m1tlt1uf87njip.apps.googleusercontent.com",
     redirectUri: "http://localhost:8081",
   });
 
   useEffect(() => {
-    GoogleSignin.configure({
+    GoogleSignin.configure({ 
       webClientId:
-        "976489237460-1d13o0q0jr4k2e509g63e90gaju3af9l.apps.googleusercontent.com",
+        "39921743232-0f0jacg0ubmiks4cg3q8n4f9bd0udip1.apps.googleusercontent.com",
       offlineAccess: true,
     });
   }, []);
@@ -119,7 +120,8 @@ export default function login() {
 
   const signOut = async () => {
     try {
-      await GoogleSignin.signOut();
+     const result = await GoogleSignin.signOut();
+     console.log(result);
       setUserInfo(null);
       Alert.alert("Signed Out", "You have been signed out");
     } catch (error) {
