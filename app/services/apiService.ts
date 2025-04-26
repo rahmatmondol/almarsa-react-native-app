@@ -33,6 +33,7 @@ export const apiService = {
     // Auth
     login: (data: any) => api.post('/login', data),
     register: (data: any) => api.post('/register', data),
+    googleLoginRegister: (data: any) => api.post('/register-google', data),
     updateProfile: (data: any) => api.post('/auth/update-profile', data),
     ChangePassword: (data: any) => api.post('/auth/change-password', data),
     forgotPassword: (data: any) => api.post('/forget-password', data),

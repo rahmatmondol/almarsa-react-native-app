@@ -22,6 +22,7 @@ import * as Google from "expo-auth-session/providers/google";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
+import api from "./utils/api";
 WebBrowser.maybeCompleteAuthSession();
 
 // Constants for SecureStore keys
@@ -30,7 +31,7 @@ const AUTH_TOKEN_KEY = "authToken";
 const WISHLIST_KEY = "wishlist";
 const BASKET_KEY = "basket";
 
-export default function Login() {
+export default function login() {
   const [showPassword, setShowPassword] = useState<any>(false);
   const [email, setEmail] = useState<any>("");
   const [password, setPassword] = useState<any>("");
@@ -40,11 +41,93 @@ export default function Login() {
   const [userInfo, setUserInfo] = useState<any | null>(null);
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    androidClientId: '208983196244-ct9ka44e5tli2aroh4kherpb94cqi37s.apps.googleusercontent.com',
-    webClientId: '208983196244-s63qnp1i36mccagvm54b9b8h2t6t2cda.apps.googleusercontent.com', 
-    redirectUri: 'http://localhost:8081',
+    androidClientId:
+      "39921743232-gh0rbugmppomuccm1tpdspt7tefq0mu6.apps.googleusercontent.com",
+    webClientId:
+      "39921743232-0f0jacg0ubmiks4cg3q8n4f9bd0udip1.apps.googleusercontent.com",
+    iosClientId:"39921743232-j4fdm83469f7gn0uc0m1tlt1uf87njip.apps.googleusercontent.com",
+    redirectUri: "http://localhost:8081",
   });
 
+  useEffect(() => {
+    GoogleSignin.configure({ 
+      webClientId:
+        "39921743232-0f0jacg0ubmiks4cg3q8n4f9bd0udip1.apps.googleusercontent.com",
+      offlineAccess: true,
+    });
+  }, []);
+
+  const signIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const result: any = await GoogleSignin.signIn();
+      const googleData: any | undefined = result?.data;
+
+      if (googleData?.user) {
+        const response = await apiService.googleLoginRegister({
+          name: googleData.user.name,
+          email: googleData.user.email,
+          google_id: googleData.user.id,
+          last_name: googleData.user.familyName,
+          first_name: googleData.user.givenName,
+          image: googleData.user.photo,
+        });
+
+        console.log("Google login response:", response);
+
+        if (response.error) {
+          Alert.alert("Error", response.message);
+          return;
+        }
+
+        await SecureStore.setItemAsync(
+          USER_DATA_KEY,
+          JSON.stringify(response.user)
+        );
+        await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
+        await SecureStore.setItemAsync(
+          WISHLIST_KEY,
+          response.wishlists_count.toString()
+        );
+        await SecureStore.setItemAsync(
+          BASKET_KEY,
+          response.cart_count.toString()
+        );
+
+        setUser({
+          token: response.token,
+          data: response.user,
+        });
+        setBasket(response.cart_count);
+        setWishlist(response.wishlists_count);
+
+        router.push("/(tabs)");
+      } else {
+        console.log("User object is malformed:", result);
+      }
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log("User cancelled the login flow");
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log("Operation (e.g. sign in) is already in progress");
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        console.log("Play services not available or outdated");
+      } else {
+        console.log("Some other error happened:", error);
+      }
+    }
+  };
+
+  const signOut = async () => {
+    try {
+     const result = await GoogleSignin.signOut();
+     console.log(result);
+      setUserInfo(null);
+      Alert.alert("Signed Out", "You have been signed out");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Function to handle Google login
 
@@ -95,44 +178,6 @@ export default function Login() {
     router.back();
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await promptAsync();
-
-      if (result.type === "success") {
-        const { idToken } = result.params;
-
-        // Handle Google login with idToken
-        // const response = await apiService.googleLogin({ idToken });
-
-        // // Store user data securely
-        // await SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(response.user));
-        // await SecureStore.setItemAsync(AUTH_TOKEN_KEY, response.token);
-        // await SecureStore.setItemAsync(WISHLIST_KEY, response.wishlists_count.toString());
-        // await SecureStore.setItemAsync(BASKET_KEY, response.cart_count.toString());
-
-        // // Update global state
-        // setUser({
-        //   token: response.token,
-        //   data: response.user,
-        // });
-        // setBasket(response.cart_count);
-        // setWishlist(response.wishlists_count);
-
-        // // Navigate to the main app
-        // router.push('/(tabs)');
-        console.log(result);
-      } else {
-        setError("Google login failed. Please try again.");
-      }
-    } catch (error: any) {
-      setError(error.message || "Google login failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -198,9 +243,8 @@ export default function Login() {
               <Text style={styles.loginButtonText}>LOGIN</Text>
             )}
           </TouchableOpacity>
-          <Button title="Sign Out" onPress={signOut} />
 
-          <Text style={styles.orText}>Or login with</Text>
+          <Text style={styles.orText}>Or login with google</Text>
 
           <View style={styles.socialButtons}>
             <TouchableOpacity style={styles.socialButton} onPress={signIn}>

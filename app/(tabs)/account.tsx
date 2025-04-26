@@ -5,6 +5,9 @@ import Header from '@/app/components/Header';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
 import useStore from '@/app/store/useStore';
+import {
+  GoogleSignin,
+} from "@react-native-google-signin/google-signin";
 
 export default function Account() {
   const { user, logout, isAuthenticated } = useStore();
@@ -16,6 +19,9 @@ export default function Account() {
   }, [isAuthenticated]);
 
   const handleLogout = async () => {
+
+    GoogleSignin.signOut();
+
     try {
       // Clear all secure storage
       await Promise.all([
